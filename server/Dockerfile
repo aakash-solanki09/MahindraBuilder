@@ -19,13 +19,15 @@ WORKDIR /app
 
 COPY --from=builder /app/package.json /app/package-lock.json* ./
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public
+
+# Create uploads directory (actual files mounted via Docker volume)
+RUN mkdir -p /app/public/uploads
 
 RUN npm ci --omit=dev --ignore-scripts
 
 ENV NODE_ENV=production
-ENV PORT=5001
+ENV PORT=5011
 
-EXPOSE 5001
+EXPOSE 5011
 
 CMD ["node", "dist/index.js"]
