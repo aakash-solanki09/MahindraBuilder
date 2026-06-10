@@ -1,0 +1,51 @@
+services:
+  # ---- MongoDB ----
+  mongodb:
+    image: mongo:7
+    container_name: mahindra-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  # ---- Backend (Express API) ----
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mahindra-server
+    ports:
+      - "5011:5001"
+    depends_on:
+      mongodb:
+        condition: service_started
+    environment:
+      - PORT=5001
+      - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
+      - CLIENT_URL=http://localhost:7001
+      - NODE_ENV=development
+    volumes:
+      - uploads-data:/app/public/uploads
+    restart: unless-stopped
+
+  # ---- Frontend (Vite + React) ----
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: mahindra-client
+    ports:
+      - "7001:7001"
+    depends_on:
+      - server
+    environment:
+      - VITE_HOST=0.0.0.0
+      - VITE_HMR_HOST=localhost
+      - VITE_HMR_PROTOCOL=http
+      - VITE_API_URL=http://localhost:5011/api
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  uploads-data:

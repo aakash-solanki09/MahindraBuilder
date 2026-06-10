@@ -1,0 +1,139 @@
+◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+[
+  {
+    "key": "backgroundImage",
+    "path": "/assets/images/woman-working-laptop-street-cafe-wearing-stylish-smart-clothes-jacket-glasses 2.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (1).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (2).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (3).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (4).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (5).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (6).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/IMAGE (7).png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "image",
+    "path": "/assets/images/d2cf0cb5-122e-48a7-87f7-6f23540b452e.jpg.png"
+  },
+  {
+    "key": "thumbnail",
+    "path": "/uploads/1778740597141-297611119.avif?t=1778740597178"
+  },
+  {
+    "key": "avatar",
+    "path": "/uploads/1778739471389-168453783.png"
+  },
+  {
+    "key": "avatar",
+    "path": "/uploads/1778739491479-989690054.png"
+  },
+  {
+    "key": "avatar",
+    "path": "/uploads/1778739626186-573602112.png"
+  },
+  {
+    "key": "0",
+    "path": "/uploads/1778742287547-562048859.png?t=1778742287551"
+  },
+  {
+    "key": "1",
+    "path": "/uploads/1778742297627-133091316.png?t=1778742297629"
+  },
+  {
+    "key": "2",
+    "path": "/uploads/1778742305130-633146174.png?t=1778742305133"
+  },
+  {
+    "key": "3",
+    "path": "/uploads/1778742315003-909248997.png?t=1778742315007"
+  },
+  {
+    "key": "4",
+    "path": "/uploads/1778742324247-230037026.png?t=1778742324250"
+  },
+  {
+    "key": "5",
+    "path": "/uploads/1778742338842-723899772.png?t=1778742338844"
+  },
+  {
+    "key": "6",
+    "path": "/uploads/1778742349626-993201791.png?t=1778742349628"
+  },
+  {
+    "key": "7",
+    "path": "/uploads/1778742359984-19116791.png?t=1778742359986"
+  },
+  {
+    "key": "8",
+    "path": "/uploads/1778742378694-554384986.png?t=1778742378696"
+  },
+  {
+    "key": "9",
+    "path": "/uploads/1778742371295-864986557.png?t=1778742371298"
+  },
+  {
+    "key": "10",
+    "path": "/uploads/1778742387336-600481485.png?t=1778742387339"
+  },
+  {
+    "key": "11",
+    "path": "/uploads/1778742395340-992635598.png?t=1778742395342"
+  },
+  {
+    "key": "logoImage",
+    "path": "/assets/images/86.png"
+  }
+]
