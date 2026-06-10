@@ -16,15 +16,21 @@ services:
       dockerfile: Dockerfile
     container_name: mahindra-server
     ports:
-      - "5011:5001"
+      - "5011:5011"
     depends_on:
       mongodb:
         condition: service_started
     environment:
-      - PORT=5001
+      - PORT=5011
       - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
       - CLIENT_URL=http://localhost:7001
       - NODE_ENV=development
+      - JWT_SECRET=mahindra_secret_123
+      - SALESFORCE_URL=https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8
+      - SALESFORCE_ORG_ID=00D4x000007sh6p
+      - SALESFORCE_RECORD_TYPE=012Vt0000023hFO
+      - SALESFORCE_DEBUG_EMAIL=amin.noumita@mahindralogistics.com
+      - SALESFORCE_DEBUG=0
     volumes:
       - uploads-data:/app/public/uploads
     restart: unless-stopped
@@ -42,6 +48,7 @@ services:
     environment:
       - VITE_HOST=0.0.0.0
       - VITE_HMR_HOST=localhost
+      - VITE_HMR_PORT=7001
       - VITE_HMR_PROTOCOL=http
       - VITE_API_URL=http://localhost:5011/api
     restart: unless-stopped
