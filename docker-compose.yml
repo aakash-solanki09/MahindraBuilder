@@ -23,7 +23,7 @@ services:
     environment:
       - PORT=5011
       - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
-      - CLIENT_URL=http://100.124.197.109:7001
+      - CLIENT_URL=http://100.124.197.109,http://100.124.197.109:7001
       - NODE_ENV=development
       - JWT_SECRET=mahindra_secret_123
       - SALESFORCE_URL=https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8

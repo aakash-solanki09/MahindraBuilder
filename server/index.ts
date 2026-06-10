@@ -23,9 +23,15 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:7001';
+const allowedOrigins = CLIENT_URL.split(',').map(url => url.trim());
+
+// Ensure local development hosts are included
+if (!allowedOrigins.includes('http://localhost:7001')) {
+  allowedOrigins.push('http://localhost:7001');
+}
 
 app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:7001'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
