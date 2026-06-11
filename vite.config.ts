@@ -11,7 +11,15 @@ export default defineConfig({
     hmr: {
       host: process.env.VITE_HMR_HOST || 'localhost',
       port: 7001,
-      protocol: (process.env.VITE_HMR_PROTOCOL as 'http' | 'ws') || 'http'
+      clientPort: process.env.VITE_HMR_CLIENT_PORT ? parseInt(process.env.VITE_HMR_CLIENT_PORT) : undefined,
+      protocol: process.env.VITE_HMR_PROTOCOL === 'https' || process.env.VITE_HMR_PROTOCOL === 'wss' ? 'wss' : 'ws'
+    },
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:5011',
+        changeOrigin: true,
+        secure: false
+      }
     }
   },
 })
