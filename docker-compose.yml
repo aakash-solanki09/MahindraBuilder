@@ -23,7 +23,7 @@ services:
     environment:
       - PORT=5011
       - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
-      - CLIENT_URL=http://100.124.197.109,http://100.124.197.109:7001
+      - CLIENT_URL=https://campaign.mahindralogistics.com,https://campaign.mahindralogistics.com:7001
       - NODE_ENV=development
       - JWT_SECRET=mahindra_secret_123
       - SALESFORCE_URL=https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8
@@ -47,10 +47,10 @@ services:
       - server
     environment:
       - VITE_HOST=0.0.0.0
-      - VITE_HMR_HOST=100.124.197.109
+      - VITE_HMR_HOST=campaign.mahindralogistics.com
       - VITE_HMR_PORT=7001
       - VITE_HMR_PROTOCOL=http
-      - VITE_API_URL=http://100.124.197.109:5011/api
+      - VITE_API_URL=https://campaign.mahindralogistics.com/api
     restart: unless-stopped
 
 volumes:
