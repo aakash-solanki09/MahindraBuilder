@@ -370,6 +370,7 @@ const Hero: React.FC<HeroProps> = ({
       borderWidth: (content as any)[`${key}BorderColor`] ? '1px' : undefined,
       padding: (content as any)[`${key}BgColor`] ? '2px 8px' : undefined,
       borderRadius: (content as any)[`${key}BgColor`] ? '4px' : undefined,
+      textShadow: '0 2px 4px rgba(0,0,0,0.6)'
     });
 
     return (
@@ -430,6 +431,8 @@ const Hero: React.FC<HeroProps> = ({
           backgroundColor: styles.backgroundColor || '#000000',
         }}
       >
+        {/* Dark gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/10 z-0 pointer-events-none" />
         <div
           className={cn(
             'container mx-auto px-4 lg:px-6 relative z-10 w-full',
@@ -439,7 +442,7 @@ const Hero: React.FC<HeroProps> = ({
           <div
             className={cn(
               'grid items-center',
-              isDesktopView ? 'grid-cols-1 xl:grid-cols-[1fr,700px] gap-8 xl:gap-16' : 'grid-cols-1 gap-8'
+              isDesktopView ? 'grid-cols-1 xl:grid-cols-[1.2fr,480px] gap-8 xl:gap-12' : 'grid-cols-1 gap-8'
             )}
           >
             {/* Left Content */}
@@ -483,7 +486,7 @@ const Hero: React.FC<HeroProps> = ({
             <div
               className={cn(
                 'w-full ml-auto',
-                isCompactDesktop ? 'max-w-[600px]' : 'max-w-[700px]',
+                isCompactDesktop ? 'max-w-[440px]' : 'max-w-[480px]',
                 isCenteredView
                   ? 'hidden'
                   : 'hidden xl:block'
@@ -662,7 +665,7 @@ const Hero: React.FC<HeroProps> = ({
   );
 };
 
-// Reusable Form Component with Single Column Stack
+// Reusable Form Component with Grid Layout
 const Form = ({
   fields,
   formData,
@@ -680,12 +683,19 @@ const Form = ({
     )}
     onSubmit={handleSubmit}
   >
-    <div className={cn(isCenteredView ? 'space-y-6' : isCompactDesktop ? 'space-y-3' : 'space-y-4')}>
+    <div className={cn(
+      "grid gap-x-4",
+      isCenteredView ? "grid-cols-1 gap-y-4" : "grid-cols-2 gap-y-2.5"
+    )}>
       {fields.map((field: any, idx: number) => {
+        const isFullWidth = field.name === '00N4x00000bbbEM' || field.type === 'textarea';
         return (
           <div
             key={idx}
-            className="space-y-2 text-left relative"
+            className={cn(
+              "space-y-1.5 text-left relative",
+              isFullWidth && "col-span-2"
+            )}
           >
             <label
               className={cn(
@@ -773,8 +783,8 @@ const Form = ({
                     maxLength={field.maxLength}
                     className={cn(
                       isCompactDesktop
-                        ? "w-full rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-mahindra-red outline-none border min-h-[72px] shadow-sm resize-none"
-                        : "w-full rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-mahindra-red outline-none border min-h-[90px] shadow-sm resize-none",
+                        ? "w-full rounded-xl px-4 py-2.5 text-[13px] focus:ring-2 focus:ring-mahindra-red outline-none border min-h-[56px] shadow-sm resize-none"
+                        : "w-full rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-mahindra-red outline-none border min-h-[72px] shadow-sm resize-none",
                       !field.inputBgColor && "bg-white",
                       !field.inputColor && "text-gray-900",
                       !field.inputBorderColor && "border-gray-200"

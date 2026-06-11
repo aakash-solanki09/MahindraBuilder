@@ -95,15 +95,24 @@ const Features: React.FC<FeaturesProps> = ({ content, styles, isEditing }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {content.cards?.map((card, idx) => {
             const cardClasses = "bg-white rounded-[12px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-gray-100 flex flex-col";
+            const resolvedLink = getResolvedLink(card.link);
+            const CardTag = resolvedLink ? 'a' : 'div';
+            const cardProps = resolvedLink ? {
+              href: isEditing ? undefined : resolvedLink,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              onClick: isEditing ? (e: React.MouseEvent) => e.preventDefault() : undefined
+            } : {};
 
             return (
-              <div
+              <CardTag
                 key={idx}
-                className={cardClasses}
+                className={cn(cardClasses, resolvedLink && "cursor-pointer")}
                 style={{
                   backgroundColor: card.cardBgColor,
                   borderColor: card.cardBorderColor
                 }}
+                {...cardProps}
               >
               <>
                 {/* Card Image */}
@@ -117,7 +126,7 @@ const Features: React.FC<FeaturesProps> = ({ content, styles, isEditing }) => {
                 </div>
 
                 {/* Card Content */}
-                <div className="p-8 flex flex-col items-start flex-grow">
+                <div className="p-8 flex flex-col items-start flex-grow w-full">
                   <h3 
                     className={cn(
                       "text-[20px] font-bold mb-3 tracking-tight",
@@ -136,16 +145,28 @@ const Features: React.FC<FeaturesProps> = ({ content, styles, isEditing }) => {
 
                   <p 
                     className={cn(
-                      "text-[14px] leading-relaxed text-left",
+                      "text-[14px] leading-relaxed text-left flex-grow",
                       !card.descriptionColor && "text-gray-500"
                     )}
                     style={getStyle('description', card)}
                   >
                     {card.description}
                   </p>
+
+                  {resolvedLink && (
+                    <div 
+                      className="mt-6 flex items-center gap-1.5 text-[12px] font-extrabold text-mahindra-red uppercase tracking-wider group-hover:text-red-700 transition-colors"
+                      style={{ color: styles.primaryColor || '#E31837' }}
+                    >
+                      Read More
+                      <svg className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               </>
-              </div>
+              </CardTag>
             );
           })}
         </div>
