@@ -431,8 +431,8 @@ const Hero: React.FC<HeroProps> = ({
           backgroundColor: styles.backgroundColor || '#000000',
         }}
       >
-        {/* Dark gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/10 z-0 pointer-events-none" />
+        {/* Soft gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent z-0 pointer-events-none" />
         <div
           className={cn(
             'container mx-auto px-4 lg:px-6 relative z-10 w-full',
