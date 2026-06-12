@@ -415,10 +415,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <input 
                     type="text" 
                     value={useBuilderStore.getState().page.meta?.title || ''}
-                    onChange={(e) => useBuilderStore.getState().setPage({ 
-                      ...useBuilderStore.getState().page, 
-                      meta: { ...(useBuilderStore.getState().page.meta || {}), title: e.target.value } 
-                    })}
+                    onChange={(e) => {
+                      const page = useBuilderStore.getState().page;
+                      useBuilderStore.getState().setPage({ 
+                        ...page, 
+                        meta: { ...page.meta, title: e.target.value } 
+                      });
+                    }}
                     className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none"
                     placeholder="Title shown in browser tab"
                   />
@@ -428,10 +431,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Meta Description</label>
                   <textarea 
                     value={useBuilderStore.getState().page.meta?.description || ''}
-                    onChange={(e) => useBuilderStore.getState().setPage({ 
-                      ...useBuilderStore.getState().page, 
-                      meta: { ...(useBuilderStore.getState().page.meta || {}), description: e.target.value } 
-                    })}
+                    onChange={(e) => {
+                      const page = useBuilderStore.getState().page;
+                      useBuilderStore.getState().setPage({ 
+                        ...page, 
+                        meta: { ...page.meta, description: e.target.value } 
+                      });
+                    }}
                     rows={4}
                     className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none resize-none"
                     placeholder="Summary for search engines..."
@@ -448,11 +454,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                       const normalized = input.toUpperCase().replace(/\s+/g, '');
                       const extractedId = input.match(/G-[A-Z0-9]+/i)?.[0]?.toUpperCase();
                       const gaMeasurementId = extractedId || (/^G-[A-Z0-9]+$/.test(normalized) ? normalized : '');
+                      const page = useBuilderStore.getState().page;
 
                       useBuilderStore.getState().setPage({
-                        ...useBuilderStore.getState().page,
+                        ...page,
                         meta: {
-                          ...(useBuilderStore.getState().page.meta || {}),
+                          ...page.meta,
                           gaMeasurementId
                         }
                       });
@@ -460,7 +467,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none"
                     placeholder="Paste full gtag script or G-XXXXXXXXXX"
                   />
-                  <p className="text-[9px] text-gray-400 px-1 italic">Full script paste karoge to system auto GA4 ID extract kar lega.</p>
                 </div>
 
                 <div className="space-y-2">

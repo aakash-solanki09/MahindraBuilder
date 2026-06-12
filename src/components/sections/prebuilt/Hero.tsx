@@ -449,7 +449,7 @@ const Hero: React.FC<HeroProps> = ({
             <div
               className={cn(
                 'text-white flex flex-col items-start text-left',
-                isDesktopView ? 'space-y-5 pl-4 lg:pl-6 xl:pl-0 xl:translate-y-10 2xl:translate-y-20' : 'space-y-5'
+                isDesktopView ? 'space-y-5 pl-4 lg:pl-6 xl:pl-0 xl:translate-y-4 2xl:translate-y-10' : 'space-y-5 -translate-y-2'
               )}
             >
               {hasTitle && (
