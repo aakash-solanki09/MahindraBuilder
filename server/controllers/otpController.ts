@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
 import { Otp } from '../models/Otp';
+import https from 'https';
+import dns from 'dns';
+
+// Prefer IPv4 first to avoid IPv6 connection timeout issues
+dns.setDefaultResultOrder('ipv4first');
 
 // SMS API configuration
 const SMS_API_URL = 'https://mahindralogistics.com/sms-sending/sms-api.php';
@@ -17,30 +22,75 @@ const generateOtp = (): string => {
  * Send OTP via the Mahindra Logistics SMS API
  */
 const sendSmsOtp = async (mobile: string, otp: string): Promise<boolean> => {
-  try {
-    const message = `Use OTP ${otp} to log in to the Alyte App. Please do not share this OTP with anyone for security reasons.`;
-    
-    const response = await fetch(SMS_API_URL, {
-      method: 'POST',
-      headers: {
-        'X-AUTH': SMS_AUTH_TOKEN,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+  return new Promise((resolve) => {
+    try {
+      const message = `Use OTP ${otp} to log in to the Alyte App. Please do not share this OTP with anyone for security reasons.`;
+      
+      const postData = JSON.stringify({
         mobile,
         message,
         senderId: SMS_SENDER_ID,
-      }),
-    });
+      });
 
-    console.log(`[SMS OTP] Sent to ${mobile}. Status: ${response.status}`);
-    const responseText = await response.text();
-    console.log(`[SMS OTP] Response: ${responseText}`);
-    return response.ok;
-  } catch (err) {
-    console.error('[SMS OTP] Failed to send SMS:', err);
-    return false;
-  }
+      const options = {
+        hostname: 'mahindralogistics.com',
+        port: 443,
+        path: '/sms-sending/sms-api.php',
+        method: 'POST',
+        headers: {
+          'X-AUTH': SMS_AUTH_TOKEN,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+          'Connection': 'close',
+          'User-Agent': 'curl/8.6.0'
+        },
+        rejectUnauthorized: false, // Bypass SSL validation issues on Node
+        timeout: 45000, // 45s timeout to handle slow SMS gateway responses
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          console.log(`[SMS OTP] Sent to ${mobile}. Status: ${res.statusCode}`);
+          console.log(`[SMS OTP] Response: ${data}`);
+          
+          try {
+            const json = JSON.parse(data);
+            // Verify that success is true AND the provider status is OK
+            if (res.statusCode === 200 && json.success === true && json.providerResponse?.status === 'OK') {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          } catch (e) {
+            // Fallback to basic status code check if response is not JSON
+            resolve(res.statusCode === 200);
+          }
+        });
+      });
+
+      req.on('error', (err) => {
+        console.error('[SMS OTP] Request error:', err);
+        resolve(false);
+      });
+
+      req.on('timeout', () => {
+        console.error('[SMS OTP] Request timeout');
+        req.destroy();
+        resolve(false);
+      });
+
+      req.write(postData);
+      req.end();
+    } catch (err) {
+      console.error('[SMS OTP] Failed to send SMS:', err);
+      resolve(false);
+    }
+  });
 };
 
 /**
