@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Link as LinkIcon, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, Link as LinkIcon, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import api, { API_URL } from '../../lib/api';
 import { cn } from '../../lib/utils';
 
@@ -81,7 +81,7 @@ const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
         )}
         <label className="flex items-center gap-1.5 text-[9px] font-bold text-mahindra-red uppercase cursor-pointer hover:underline bg-red-50 px-2 py-0.5 rounded-full border border-red-100 transition-all hover:bg-red-100">
           {isUploading ? (
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            <img src="/mahindra-loader-new.gif" alt="" className="w-3 h-3" />
           ) : (
             <Upload className="w-2.5 h-2.5" />
           )}

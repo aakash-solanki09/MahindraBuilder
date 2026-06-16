@@ -6,6 +6,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import LivePage from './pages/LivePage';
 import Login from './pages/Login';
 import ThankYouPage from './pages/ThankYouPage';
+import AdminUtmAnalytics from './pages/AdminUtmAnalytics';
 
 const RequireAdmin: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -55,6 +56,14 @@ function App() {
           element={
             <RequireAdmin>
               <AdminBuilder />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/admin/utm"
+          element={
+            <RequireAdmin>
+              <AdminUtmAnalytics />
             </RequireAdmin>
           }
         />

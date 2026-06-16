@@ -9,16 +9,7 @@ import { capturePageUTM, getStoredUTMParams } from '../lib/utm';
 
 const BrandLoader = () => (
   <div className="h-screen flex items-center justify-center bg-white">
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-2xl ring-1 ring-black/5">
-        <div className="absolute inset-0 rounded-full border-4 border-mahindra-red/15 border-t-mahindra-red animate-spin" />
-        <img
-          src="/assets/images/86.png"
-          alt="Mahindra Logistics"
-            className="relative z-10 w-12 h-12 lg:w-14 lg:h-14 object-contain animate-pulse"
-        />
-      </div>
-    </div>
+    <img src="/mahindra-loader-new.gif" alt="Loading..." className="w-24 h-24 object-contain" />
   </div>
 );
 

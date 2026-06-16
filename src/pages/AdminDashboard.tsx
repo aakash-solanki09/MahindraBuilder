@@ -17,7 +17,8 @@ import {
   Eye,
   Filter,
   Calendar,
-  Inbox
+  Inbox,
+  BarChart3
 } from 'lucide-react';
 import api from '../lib/api';
 import type { PageData } from '../types';
@@ -46,7 +47,7 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   // Tab and Inquiries state
-  const [activeTab, setActiveTab] = useState<'pages' | 'inquiries'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'inquiries' | 'utm'>('pages');
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
@@ -280,6 +281,15 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'inquiries' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-mahindra-red rounded-full" />
             )}
+          </button>
+          <button
+            onClick={() => navigate('/admin/utm')}
+            className="pb-4 text-base sm:text-lg font-bold transition-all relative text-gray-500 hover:text-gray-900"
+          >
+            <span className="inline-flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              UTM Analytics
+            </span>
           </button>
         </div>
 
