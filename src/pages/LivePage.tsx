@@ -5,6 +5,7 @@ import SectionRenderer from '../components/SectionRenderer';
 import OtpModal from '../components/ui/OtpModal';
 import api from '../lib/api';
 import SEO from "../components/SEO";
+import { capturePageUTM, getStoredUTMParams } from '../lib/utm';
 
 const BrandLoader = () => (
   <div className="h-screen flex items-center justify-center bg-white">
@@ -85,8 +86,11 @@ const LivePage: React.FC = () => {
       const resolvedSlug = page?.slug && page.slug !== 'preview' ? page.slug : currentSlug;
       const resolvedName = page?.pageName || resolvedSlug;
 
+      const storedUTM = getStoredUTMParams();
+
       await api.post('/leads', {
         ...formDataObj,
+        ...storedUTM,
         sourcePageName: resolvedName,
         sourcePageSlug: resolvedSlug,
         sourcePath: location.pathname,
@@ -153,6 +157,13 @@ const LivePage: React.FC = () => {
         const currentSlug = slug || 'preview';
         const res = await api.get(`/pages/published?slug=${currentSlug}`);
         setPage(res.data);
+
+        capturePageUTM({
+          pageId: res.data?._id,
+          pageName: res.data?.pageName,
+          pageSlug: res.data?.slug || currentSlug,
+          sourcePath: location.pathname,
+        });
       } catch (err) {
         console.error('No published page found or error fetching', err);
         setError(true);

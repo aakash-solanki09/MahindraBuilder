@@ -219,7 +219,7 @@ const AdminDashboard: React.FC = () => {
               <div className="w-10 h-10 bg-mahindra-red rounded-lg flex items-center justify-center shadow-lg shadow-red-100">
                 <Layout className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Mahindra Builder</h1>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Mahindra Logistic</h1>
             </a>
             
             <div className="flex items-center gap-4">

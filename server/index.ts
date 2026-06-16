@@ -14,6 +14,7 @@ import leadRoutes from './routes/lead';
 import otpRoutes from './routes/otp';
 import customSectionRoutes from './routes/customSections';
 import uploadRoutes from './routes/upload';
+import utmRoutes from './routes/utm';
 import { User } from './models/User';
 import bcrypt from 'bcryptjs';
 
@@ -40,7 +41,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Root Route for Health Check
 app.get('/', (req, res) => {
-  res.json({ message: 'Mahindra Builder API is running successfully!', status: 'online' });
+  res.json({ message: 'Mahindra Logistic API is running successfully!', status: 'online' });
 });
 
 // Routes
@@ -50,6 +51,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/custom-sections', customSectionRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/utm', utmRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -185,7 +185,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-8 h-8 bg-mahindra-blue rounded-lg flex items-center justify-center">
               <Layout className="w-4 h-4 text-white" />
             </div>
-            <h2 className="font-black text-lg tracking-tighter text-mahindra-blue uppercase">Mahindra Builder</h2>
+            <h2 className="font-black text-lg tracking-tighter text-mahindra-blue uppercase">Mahindra Logistic</h2>
           </a>
           <div className="flex gap-2">
             <button

@@ -1,0 +1,51 @@
+services:
+  # ---- Local MongoDB ----
+  mongodb:
+    image: mongo:7
+    container_name: logistic-local-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - logistic-local-mongo-data:/data/db
+    restart: unless-stopped
+
+  # ---- Backend (Express API) - Local Dev ----
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: logistic-local-server
+    ports:
+      - "5011:5011"
+    depends_on:
+      mongodb:
+        condition: service_started
+    env_file:
+      - ./server/.env.docker.local
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
+    volumes:
+      - ./server:/app
+      - logistic-local-uploads:/app/public/uploads
+    restart: unless-stopped
+
+  # ---- Frontend (Vite + React) - Local Dev ----
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: logistic-local-client
+    ports:
+      - "7001:7001"
+    depends_on:
+      - server
+    env_file:
+      - .env.docker.local
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    restart: unless-stopped
+
+volumes:
+  logistic-local-mongo-data:
+  logistic-local-uploads:

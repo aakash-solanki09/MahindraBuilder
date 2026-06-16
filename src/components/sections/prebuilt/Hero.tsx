@@ -4,6 +4,7 @@ import api from '../../../lib/api';
 import { resolveMediaUrl } from '../../../lib/media';
 import { cn } from '../../../lib/utils';
 import { useBuilderStore } from '../../../store/useBuilderStore';
+import { getStoredUTMParams } from '../../../lib/utm';
 
 interface HeroProps {
   content: {
@@ -100,6 +101,8 @@ const Hero: React.FC<HeroProps> = ({
       placeholder: 'Enter first name...',
       type: 'text',
       required: true,
+      pattern: '^[A-Za-z ]+$',
+      inputMode: 'text',
     },
     {
       name: 'last_name',
@@ -107,6 +110,8 @@ const Hero: React.FC<HeroProps> = ({
       placeholder: 'Enter last name...',
       type: 'text',
       required: true,
+      pattern: '^[A-Za-z ]+$',
+      inputMode: 'text',
     },
     {
       name: 'email',
@@ -132,23 +137,25 @@ const Hero: React.FC<HeroProps> = ({
       placeholder: 'Enter company name...',
       type: 'text',
       required: true,
+      pattern: '^[A-Za-z ]+$',
+      inputMode: 'text',
     },
     {
       name: 'city',
-      label: 'City',
+      label: 'City *',
       placeholder: 'Enter city...',
       type: 'text',
-      required: false,
+      required: true,
     },
     {
       name: 'zip',
-      label: 'Pin Code',
+      label: 'Pin Code *',
       placeholder: 'Enter pin code...',
       type: 'text',
+      required: true,
       maxLength: 20,
       pattern: '[0-9]*',
       inputMode: 'numeric',
-      required: false,
     },
     {
       name: '00N4x00000bbbE3',
@@ -207,8 +214,11 @@ const Hero: React.FC<HeroProps> = ({
       ? (page?.pageName || 'Mahindra Logistics') 
       : (page?.pageName || resolvedSlug);
 
+    const storedUTM = getStoredUTMParams();
+
     await api.post('/leads', {
       ...formData,
+      ...storedUTM,
       oid: '00D4x000007sh6p',
       retURL: 'http://google.com',
       recordType: '012Vt0000023hFO',
@@ -227,9 +237,39 @@ const Hero: React.FC<HeroProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const nameRegex = /^[A-Za-z ]+$/;
+    if (formData.first_name && !nameRegex.test(formData.first_name)) {
+      alert('First Name should contain only alphabets and spaces.');
+      return;
+    }
+    if (formData.last_name && !nameRegex.test(formData.last_name)) {
+      alert('Last Name should contain only alphabets and spaces.');
+      return;
+    }
+    if (formData.company && !nameRegex.test(formData.company)) {
+      alert('Company Name should contain only alphabets and spaces.');
+      return;
+    }
+
     const phone = String(formData.mobile || '').replace(/\D/g, '');
     if (!phone || phone.length < 10) {
       alert('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (!formData.city || !formData.city.trim()) {
+      alert('City is required.');
+      return;
+    }
+
+    if (!formData.zip || !formData.zip.trim()) {
+      alert('Pin Code is required.');
+      return;
+    }
+
+    const pinRegex = /^[0-9]+$/;
+    if (formData.zip && !pinRegex.test(formData.zip)) {
+      alert('Pin Code should contain only numbers.');
       return;
     }
 
@@ -449,7 +489,11 @@ const Hero: React.FC<HeroProps> = ({
             <div
               className={cn(
                 'text-white flex flex-col items-start text-left',
-                isDesktopView ? 'space-y-5 pl-4 lg:pl-6 xl:pl-0 xl:translate-y-4 2xl:translate-y-10' : 'space-y-5 -translate-y-2'
+                'space-y-5 -translate-y-[156px] translate-x-9',
+                'lg:translate-y-4 lg:translate-x-0',
+                'xl:pl-0 xl:translate-y-4',
+                '2xl:translate-y-10',
+                isDesktopView ? 'pl-4 lg:pl-6' : ''
               )}
             >
               {hasTitle && (
@@ -486,7 +530,7 @@ const Hero: React.FC<HeroProps> = ({
             <div
               className={cn(
                 'w-full ml-auto',
-                isCompactDesktop ? 'max-w-[440px]' : 'max-w-[480px]',
+                isCompactDesktop ? 'max-w-[560px]' : 'max-w-[600px]',
                 isCenteredView
                   ? 'hidden'
                   : 'hidden xl:block'
@@ -539,7 +583,7 @@ const Hero: React.FC<HeroProps> = ({
           'bg-[#F3F8FF] w-full py-12 px-6 xl:hidden'
         )}
       >
-        <div className="max-w-[500px] mx-auto bg-[#F3F8FF] rounded-[30px]">
+        <div className="max-w-[600px] mx-auto bg-[#F3F8FF] rounded-[30px]">
           {content.formTitle?.trim() && (
             <h2 
               className={cn(
@@ -802,15 +846,19 @@ const Form = ({
                   name={field.name}
                   value={formData[field.name] || ''}
                   onChange={handleChange}
-                  onInput={field.maxLength || field.pattern ? (e: React.FormEvent<HTMLInputElement>) => {
+                  onInput={(e: React.FormEvent<HTMLInputElement>) => {
                     const target = e.currentTarget;
-                    if (field.pattern) {
+                    if (field.name === 'first_name' || field.name === 'last_name' || field.name === 'company') {
+                      target.value = target.value.replace(/[^A-Za-z ]/g, '');
+                    } else if (field.pattern === '[0-9]*') {
                       target.value = target.value.replace(/\D/g, '');
+                    } else if (field.name === '00N4x00000bbbEM') {
+                      target.value = target.value.replace(/[^A-Za-z0-9 ,.\-\/()&:;'"!]/g, '');
                     }
                     if (field.maxLength) {
                       target.value = target.value.slice(0, field.maxLength);
                     }
-                  } : undefined}
+                  }}
                   type={field.type}
                   placeholder={field.placeholder}
                   maxLength={field.maxLength}
@@ -857,7 +905,7 @@ const Form = ({
             : 'text-white'
         )}
       >
-        I agree to the Terms & Conditions
+        I agree to the Terms & Conditions and Privacy Policy and authorize Mahindra Logistics Ltd. to contact me regarding my enquiry via phone calls, SMS, WhatsApp & email.
       </label>
     </div>
 

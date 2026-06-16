@@ -11,3 +11,6 @@ client/node_modules/
 client/dist/
 server/node_modules/
 server/dist/
+.env.docker.local
+docker-compose.local.yml
+docker-compose.yml
