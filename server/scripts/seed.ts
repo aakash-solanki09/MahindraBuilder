@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mahindra-builder';
 
@@ -106,7 +106,7 @@ const migrations = [
     name: '002-ensure-utm-indexes',
     up: async () => {
       const indexes = await UTM.collection.indexes();
-      const hasPageSlug = indexes.some((i) => i.key && i.key.pageSlug === 1);
+      const hasPageSlug = indexes.some((i: any) => i.key && i.key.pageSlug === 1);
       if (!hasPageSlug) {
         await UTM.collection.createIndex({ pageSlug: 1 });
         console.log('  [migration] Created UTM pageSlug index');
@@ -119,7 +119,7 @@ const migrations = [
     name: '003-ensure-lead-indexes',
     up: async () => {
       const indexes = await Lead.collection.indexes();
-      const hasPageId = indexes.some((i) => i.key && i.key.pageId === 1);
+      const hasPageId = indexes.some((i: any) => i.key && i.key.pageId === 1);
       if (!hasPageId) {
         await Lead.collection.createIndex({ pageId: 1 });
         await Lead.collection.createIndex({ createdAt: -1 });
@@ -133,12 +133,12 @@ const migrations = [
     name: '004-ensure-otp-ttl-index',
     up: async () => {
       const indexes = await Otp.collection.indexes();
-      const hasTtl = indexes.some((i) => i.key && i.key.expiresAt === 1 && i.expireAfterSeconds === 0);
+      const hasTtl = indexes.some((i: any) => i.key && i.key.expiresAt === 1 && i.expireAfterSeconds === 0);
       if (!hasTtl) {
         await Otp.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
         console.log('  [migration] Created OTP TTL index');
       } else {
-        console.log('  [migration] OTP TTL index already exists, skipping');
+        console.log('  [migration] OTP TTL index already exist, skipping');
       }
     },
   },
@@ -146,7 +146,7 @@ const migrations = [
     name: '005-ensure-page-indexes',
     up: async () => {
       const indexes = await Page.collection.indexes();
-      const hasSlug = indexes.some((i) => i.key && i.key.slug === 1);
+      const hasSlug = indexes.some((i: any) => i.key && i.key.slug === 1);
       if (!hasSlug) {
         await Page.collection.createIndex({ slug: 1 }, { unique: true });
         console.log('  [migration] Created Page slug unique index');
@@ -167,7 +167,7 @@ async function runMigrations() {
     try {
       await migration.up();
       console.log(`[seed] ✓ ${migration.name} done\n`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(`[seed] ✗ ${migration.name} failed:`, err.message);
     }
   }
@@ -177,7 +177,7 @@ async function runMigrations() {
   process.exit(0);
 }
 
-runMigrations().catch((err) => {
+runMigrations().catch((err: any) => {
   console.error('[seed] Fatal error:', err);
   process.exit(1);
 });

@@ -30,4 +30,4 @@ ENV PORT=5011
 
 EXPOSE 5011
 
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "node dist/scripts/seed.js && node dist/index.js"]
