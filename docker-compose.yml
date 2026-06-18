@@ -17,8 +17,6 @@ services:
     container_name: mahindra-server
     ports:
       - "5011:5011"
-    extra_hosts:
-      - "mahindralogistics.com:host-gateway"
     depends_on:
       mongodb:
         condition: service_started

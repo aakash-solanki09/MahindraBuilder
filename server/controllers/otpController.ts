@@ -319,6 +319,62 @@ export const diagnoseSms = async (req: Request, res: Response) => {
     diagnostics.httpRequest.error = httpErr.message;
   }
 
+  // 4. Direct HTTPS Request to Public IP (Bypassing /etc/hosts via IP + SNI)
+  try {
+    const start = Date.now();
+    diagnostics.directPublicIpRequest = await new Promise((resolve) => {
+      const dummyData = JSON.stringify({
+        mobile: '9999999999',
+        message: 'Diagnostics test',
+        senderId: 'ALYTEP'
+      });
+
+      const options = {
+        hostname: '20.207.69.20',
+        servername: 'mahindralogistics.com', // SNI
+        port: 443,
+        path: '/sms-sending/sms-api.php',
+        method: 'POST',
+        headers: {
+          'Host': 'mahindralogistics.com',
+          'X-AUTH': 'dummy_token',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(dummyData),
+          'Connection': 'close'
+        },
+        rejectUnauthorized: false,
+        timeout: 10000 // 10s timeout
+      };
+
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => { data += chunk; });
+        response.on('end', () => {
+          resolve({
+            statusCode: response.statusCode,
+            headers: response.headers,
+            data: data.slice(0, 500),
+            durationMs: Date.now() - start
+          });
+        });
+      });
+
+      request.on('error', (err: any) => {
+        resolve({ error: err.message, code: err.code, durationMs: Date.now() - start });
+      });
+
+      request.on('timeout', () => {
+        request.destroy();
+        resolve({ error: 'Request timed out (10s limit reached)', durationMs: Date.now() - start });
+      });
+
+      request.write(dummyData);
+      request.end();
+    });
+  } catch (httpErr: any) {
+    diagnostics.directPublicIpRequest = { error: httpErr.message };
+  }
+
   return res.status(200).json(diagnostics);
 };
 
