@@ -20,6 +20,8 @@ interface SEOProps {
     title?: string;
     description?: string;
     gaMeasurementId?: string;
+    gtmId?: string;
+    pixelId?: string;
     attributes?: MetaAttribute[];
     links?: MetaLink[];
   };
@@ -177,6 +179,12 @@ export default function SEO({
   const gaId = (meta?.gaMeasurementId || '').trim().toUpperCase();
   const hasGa = /^G-[A-Z0-9]+$/.test(gaId);
 
+  const gtmId = (meta?.gtmId || '').trim().toUpperCase();
+  const hasGtm = /^GTM-[A-Z0-9]+$/.test(gtmId);
+
+  const pixelId = (meta?.pixelId || '').trim();
+  const hasPixel = /^[0-9]+$/.test(pixelId);
+
   return (
     <Helmet>
       <title>{title}</title>
@@ -218,6 +226,39 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', '${gaId}');`}
         </script>
+      )}
+      {hasGtm && (
+        <script>
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${gtmId}');`}
+        </script>
+      )}
+      {hasGtm && (
+        <noscript>
+          {`<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`}
+        </noscript>
+      )}
+      {hasPixel && (
+        <script>
+          {`!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '${pixelId}');
+fbq('track', 'PageView');`}
+        </script>
+      )}
+      {hasPixel && (
+        <noscript>
+          {`<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`}
+        </noscript>
       )}
     </Helmet>
   );

@@ -470,6 +470,53 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Google Tag Manager Container ID</label>
+                  <input
+                    type="text"
+                    value={useBuilderStore.getState().page.meta?.gtmId || ''}
+                    onChange={(e) => {
+                      const input = e.target.value;
+                      const normalized = input.toUpperCase().replace(/\s+/g, '');
+                      const extractedId = input.match(/GTM-[A-Z0-9]+/i)?.[0]?.toUpperCase();
+                      const gtmId = extractedId || (/^GTM-[A-Z0-9]+$/.test(normalized) ? normalized : '');
+                      const page = useBuilderStore.getState().page;
+
+                      useBuilderStore.getState().setPage({
+                        ...page,
+                        meta: {
+                          ...page.meta,
+                          gtmId
+                        }
+                      });
+                    }}
+                    className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none"
+                    placeholder="e.g. GTM-XXXXXXX"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Facebook Pixel ID</label>
+                  <input
+                    type="text"
+                    value={useBuilderStore.getState().page.meta?.pixelId || ''}
+                    onChange={(e) => {
+                      const input = e.target.value.replace(/\D/g, '');
+                      const page = useBuilderStore.getState().page;
+
+                      useBuilderStore.getState().setPage({
+                        ...page,
+                        meta: {
+                          ...page.meta,
+                          pixelId: input
+                        }
+                      });
+                    }}
+                    className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none"
+                    placeholder="e.g. 1234567890"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Editable Default Meta Tags</label>
                   <div className="border rounded-xl bg-gray-50 p-3 max-h-72 overflow-y-auto space-y-2">
                     {defaultMetaFields.map((field) => (

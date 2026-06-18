@@ -72,6 +72,8 @@ export interface PageData {
     title: string;
     description: string;
     gaMeasurementId?: string;
+    gtmId?: string;
+    pixelId?: string;
     floatingCta?: {
       text?: string;
       backgroundColor?: string;

@@ -21,6 +21,8 @@ const pageSchema = new mongoose.Schema({
     title: { type: String, default: 'Mahindra Logistics' },
     description: { type: String, default: '3PL Logistics & Warehousing Solutions' },
     gaMeasurementId: { type: String, default: '' },
+    gtmId: { type: String, default: '' },
+    pixelId: { type: String, default: '' },
     floatingCta: {
       text: { type: String, default: 'Get Free Quote' },
       backgroundColor: { type: String, default: '#E31837' },
