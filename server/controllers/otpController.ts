@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Otp } from '../models/Otp';
 import https from 'https';
 import dns from 'dns';
+import net from 'net';
 
 // Prefer IPv4 first to avoid IPv6 connection timeout issues
 dns.setDefaultResultOrder('ipv4first');
@@ -206,3 +207,118 @@ export const verifyOtp = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
+/**
+ * GET /api/otp/diagnose
+ * Diagnose connection issues to the SMS API endpoint
+ */
+export const diagnoseSms = async (req: Request, res: Response) => {
+  const diagnostics: any = {
+    timestamp: new Date().toISOString(),
+    dns: {},
+    connection: {},
+    httpRequest: {}
+  };
+
+  // 1. DNS Resolution
+  try {
+    diagnostics.dns.ipv4 = await new Promise((resolve) => {
+      dns.resolve4('mahindralogistics.com', (err, addresses) => {
+        if (err) resolve({ error: err.message, code: (err as any).code });
+        else resolve(addresses);
+      });
+    });
+    diagnostics.dns.ipv6 = await new Promise((resolve) => {
+      dns.resolve6('mahindralogistics.com', (err, addresses) => {
+        if (err) resolve({ error: err.message, code: (err as any).code });
+        else resolve(addresses);
+      });
+    });
+    diagnostics.dns.defaultOrder = dns.getDefaultResultOrder ? dns.getDefaultResultOrder() : 'unknown';
+  } catch (dnsErr: any) {
+    diagnostics.dns.error = dnsErr.message;
+  }
+
+  // 2. Direct TCP Connection Test to port 443
+  try {
+    const start = Date.now();
+    diagnostics.connection = await new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(5000); // 5s timeout
+
+      socket.connect(443, 'mahindralogistics.com', () => {
+        const duration = Date.now() - start;
+        socket.destroy();
+        resolve({ success: true, durationMs: duration });
+      });
+
+      socket.on('error', (err) => {
+        resolve({ success: false, error: err.message, code: (err as any).code });
+      });
+
+      socket.on('timeout', () => {
+        socket.destroy();
+        resolve({ success: false, error: 'Connection timed out (5s limit reached)' });
+      });
+    });
+  } catch (connErr: any) {
+    diagnostics.connection.error = connErr.message;
+  }
+
+  // 3. HTTPS Request Test (Dummy payload)
+  try {
+    const start = Date.now();
+    diagnostics.httpRequest = await new Promise((resolve) => {
+      const dummyData = JSON.stringify({
+        mobile: '9999999999',
+        message: 'Diagnostics test',
+        senderId: 'ALYTEP'
+      });
+
+      const options = {
+        hostname: 'mahindralogistics.com',
+        port: 443,
+        path: '/sms-sending/sms-api.php',
+        method: 'POST',
+        headers: {
+          'X-AUTH': 'dummy_token',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(dummyData),
+          'Connection': 'close'
+        },
+        rejectUnauthorized: false,
+        timeout: 10000 // 10s timeout
+      };
+
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => { data += chunk; });
+        response.on('end', () => {
+          resolve({
+            statusCode: response.statusCode,
+            headers: response.headers,
+            data: data.slice(0, 500),
+            durationMs: Date.now() - start
+          });
+        });
+      });
+
+      request.on('error', (err: any) => {
+        resolve({ error: err.message, code: err.code, durationMs: Date.now() - start });
+      });
+
+      request.on('timeout', () => {
+        request.destroy();
+        resolve({ error: 'Request timed out (10s limit reached)', durationMs: Date.now() - start });
+      });
+
+      request.write(dummyData);
+      request.end();
+    });
+  } catch (httpErr: any) {
+    diagnostics.httpRequest.error = httpErr.message;
+  }
+
+  return res.status(200).json(diagnostics);
+};
+
