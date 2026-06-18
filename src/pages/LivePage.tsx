@@ -205,9 +205,19 @@ const LivePage: React.FC = () => {
 
   if (error || !page.sections || page.sections.length === 0) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center text-center p-4">
-        <h1 className="text-4xl font-bold text-mahindra-blue mb-4">Site Under Construction</h1>
-        <p className="text-gray-600 mb-8 max-w-md">The Mahindra Logistics landing page is currently being built. Please check back later or visit the admin dashboard to publish your content.</p>
+      <div className="h-screen flex flex-col items-center justify-center text-center p-6 bg-slate-50">
+        <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl max-w-xl w-full border border-slate-100 flex flex-col items-center">
+          <img src="/mahindra-loader-new.gif" alt="Mahindra Logistics" className="w-32 h-16 object-contain mb-6" />
+          <p className="text-lg md:text-xl font-semibold text-slate-700 mb-6 leading-relaxed">
+            To know more about services, please visit our official website.
+          </p>
+          <a
+            href="https://mahindralogistics.com/"
+            className="inline-flex items-center justify-center px-8 py-3.5 bg-[#E31837] text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-all hover:scale-105 duration-200"
+          >
+            Click here
+          </a>
+        </div>
       </div>
     );
   }

@@ -146,6 +146,8 @@ const Hero: React.FC<HeroProps> = ({
       placeholder: 'Enter city...',
       type: 'text',
       required: true,
+      pattern: '^[A-Za-z ]+$',
+      inputMode: 'text',
     },
     {
       name: 'zip',
@@ -248,6 +250,10 @@ const Hero: React.FC<HeroProps> = ({
     }
     if (formData.company && !nameRegex.test(formData.company)) {
       alert('Company Name should contain only alphabets and spaces.');
+      return;
+    }
+    if (formData.city && !nameRegex.test(formData.city)) {
+      alert('City Name should contain only alphabets and spaces.');
       return;
     }
 
@@ -489,10 +495,10 @@ const Hero: React.FC<HeroProps> = ({
             <div
               className={cn(
                 'text-white flex flex-col items-start text-left',
-                'space-y-5 -translate-y-[156px] translate-x-9',
-                'lg:translate-y-4 lg:translate-x-0',
-                'xl:pl-0 xl:translate-y-4',
-                '2xl:translate-y-10',
+                'space-y-5 -translate-y-[110px] translate-x-9',
+                'lg:-translate-y-24 lg:translate-x-0',
+                'xl:pl-0 xl:-translate-y-28',
+                '2xl:-translate-y-36',
                 isDesktopView ? 'pl-4 lg:pl-6' : ''
               )}
             >
@@ -845,7 +851,7 @@ const Form = ({
                   onChange={handleChange}
                   onInput={(e: React.FormEvent<HTMLInputElement>) => {
                     const target = e.currentTarget;
-                    if (field.name === 'first_name' || field.name === 'last_name' || field.name === 'company') {
+                    if (field.name === 'first_name' || field.name === 'last_name' || field.name === 'company' || field.name === 'city') {
                       target.value = target.value.replace(/[^A-Za-z ]/g, '');
                     } else if (field.pattern === '[0-9]*') {
                       target.value = target.value.replace(/\D/g, '');
