@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { API_URL } from "../lib/api";
 
@@ -185,6 +186,89 @@ export default function SEO({
   const pixelId = (meta?.pixelId || '').trim();
   const hasPixel = /^[0-9]+$/.test(pixelId);
 
+  useEffect(() => {
+    // 1. Google Analytics
+    if (hasGa) {
+      const srcScriptId = `ga-script-src-${gaId}`;
+      if (!document.getElementById(srcScriptId)) {
+        const srcScript = document.createElement("script");
+        srcScript.id = srcScriptId;
+        srcScript.async = true;
+        srcScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+        document.head.appendChild(srcScript);
+      }
+
+      const initScriptId = `ga-script-init-${gaId}`;
+      if (!document.getElementById(initScriptId)) {
+        const initScript = document.createElement("script");
+        initScript.id = initScriptId;
+        initScript.innerHTML = `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){window.dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', '${gaId}');
+        `;
+        document.head.appendChild(initScript);
+      } else {
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('config', gaId, { page_path: window.location.pathname });
+        }
+      }
+    }
+
+    // 2. Google Tag Manager
+    if (hasGtm) {
+      const gtmScriptId = `gtm-script-${gtmId}`;
+      if (!document.getElementById(gtmScriptId)) {
+        const gtmScript = document.createElement("script");
+        gtmScript.id = gtmScriptId;
+        gtmScript.innerHTML = `
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','${gtmId}');
+        `;
+        document.head.appendChild(gtmScript);
+      } else {
+        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+          (window as any).dataLayer.push({
+            event: 'pageview',
+            pagePath: window.location.pathname,
+            pageTitle: document.title
+          });
+        }
+      }
+    }
+
+    // 3. Facebook Pixel
+    if (hasPixel) {
+      const pixelScriptId = `pixel-script-${pixelId}`;
+      if (!document.getElementById(pixelScriptId)) {
+        const pixelScript = document.createElement("script");
+        pixelScript.id = pixelScriptId;
+        pixelScript.innerHTML = `
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '${pixelId}');
+          fbq('track', 'PageView');
+        `;
+        document.head.appendChild(pixelScript);
+      } else {
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'PageView');
+        }
+      }
+    }
+  }, [gaId, hasGa, gtmId, hasGtm, pixelId, hasPixel, slug]);
+
   return (
     <Helmet>
       <title>{title}</title>
@@ -216,44 +300,10 @@ export default function SEO({
       <script type="application/ld+json">
         {JSON.stringify(structuredData)}
       </script>
-      {hasGa && (
-        <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-      )}
-      {hasGa && (
-        <script>
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${gaId}');`}
-        </script>
-      )}
-      {hasGtm && (
-        <script>
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${gtmId}');`}
-        </script>
-      )}
       {hasGtm && (
         <noscript>
           {`<iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`}
         </noscript>
-      )}
-      {hasPixel && (
-        <script>
-          {`!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${pixelId}');
-fbq('track', 'PageView');`}
-        </script>
       )}
       {hasPixel && (
         <noscript>
