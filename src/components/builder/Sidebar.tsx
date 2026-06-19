@@ -453,7 +453,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       const input = e.target.value;
                       const normalized = input.toUpperCase().replace(/\s+/g, '');
                       const extractedId = input.match(/G-[A-Z0-9]+/i)?.[0]?.toUpperCase();
-                      const gaMeasurementId = extractedId || (/^G-[A-Z0-9]+$/.test(normalized) ? normalized : '');
+                      const gaMeasurementId = (input.includes('<script') || input.includes('gtag')) && extractedId ? extractedId : normalized;
                       const page = useBuilderStore.getState().page;
 
                       useBuilderStore.getState().setPage({
@@ -478,7 +478,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       const input = e.target.value;
                       const normalized = input.toUpperCase().replace(/\s+/g, '');
                       const extractedId = input.match(/GTM-[A-Z0-9]+/i)?.[0]?.toUpperCase();
-                      const gtmId = extractedId || (/^GTM-[A-Z0-9]+$/.test(normalized) ? normalized : '');
+                      const gtmId = (input.includes('<script') || input.includes('dataLayer')) && extractedId ? extractedId : normalized;
                       const page = useBuilderStore.getState().page;
 
                       useBuilderStore.getState().setPage({
@@ -500,14 +500,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                     type="text"
                     value={useBuilderStore.getState().page.meta?.pixelId || ''}
                     onChange={(e) => {
-                      const input = e.target.value.replace(/\D/g, '');
+                      const input = e.target.value;
+                      const matchId = input.match(/id=([0-9]+)/i)?.[1] || input.match(/init',\s*'([0-9]+)'/i)?.[1];
+                      const pixelId = matchId || input.replace(/\D/g, '');
                       const page = useBuilderStore.getState().page;
 
                       useBuilderStore.getState().setPage({
                         ...page,
                         meta: {
                           ...page.meta,
-                          pixelId: input
+                          pixelId
                         }
                       });
                     }}
