@@ -9,7 +9,7 @@ import { capturePageUTM, getStoredUTMParams } from '../lib/utm';
 
 const BrandLoader = () => (
   <div className="h-screen flex items-center justify-center bg-white">
-    <img src="/assets/images/86.png" alt="Mahindra Logistics" className="h-[65px] w-[271px] object-contain" />
+    <img src="/mahindra-loader-new.gif" alt="Loading..." className="w-24 h-24 object-contain" />
   </div>
 );
 
