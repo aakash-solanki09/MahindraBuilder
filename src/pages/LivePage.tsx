@@ -9,7 +9,7 @@ import { capturePageUTM, getStoredUTMParams } from '../lib/utm';
 
 const BrandLoader = () => (
   <div className="h-screen flex items-center justify-center bg-white">
-    <img src="/mahindra-loader-new.gif" alt="Loading..." className="w-24 h-24 object-contain" />
+    <img src="/assets/images/86.png" alt="Mahindra Logistics" className="h-[65px] w-[271px] object-contain" />
   </div>
 );
 
@@ -207,7 +207,7 @@ const LivePage: React.FC = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-center p-6 bg-slate-50">
         <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl max-w-xl w-full border border-slate-100 flex flex-col items-center">
-          <img src="/mahindra-loader-new.gif" alt="Mahindra Logistics" className="w-32 h-16 object-contain mb-6" />
+          <img src="/assets/images/86.png" alt="Mahindra Logistics" className="h-[65px] w-[271px] object-contain mb-6" />
           <p className="text-lg md:text-xl font-semibold text-slate-700 mb-6 leading-relaxed">
             To know more about services, please visit our official website.
           </p>

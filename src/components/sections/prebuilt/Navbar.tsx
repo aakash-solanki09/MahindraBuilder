@@ -31,8 +31,7 @@ const Navbar: React.FC<NavbarProps> = ({ content, styles, isEditing }) => {
           "flex w-full",
           isCenteredView ? "justify-center" : "justify-center lg:justify-start"
         )}>
-          <a href="/" className="block">
-            <img 
+          <img 
               src={logoSrc} 
               alt="Mahindra Logistics" 
               className={cn(
@@ -40,7 +39,6 @@ const Navbar: React.FC<NavbarProps> = ({ content, styles, isEditing }) => {
                 isCenteredView ? "h-[30px] w-auto lg:h-[40px]" : "h-[30px] w-auto lg:h-[65px] lg:w-[271px]"
               )}
             />
-          </a>
         </div>
 
         {/* Navigation Links */}
