@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import api from '../lib/api';
 import type { PageData } from '../types';
+import { resolveMediaUrl } from '../lib/media';
 
 type UTMItem = {
   _id: string;
@@ -39,6 +40,21 @@ type UTMItem = {
 
 const AdminUtmAnalytics: React.FC = () => {
   const navigate = useNavigate();
+
+  // Get active brand details
+  const userRaw = localStorage.getItem('user');
+  let brandName = 'Mahindra Logistics';
+  let brandLogo = '/assets/images/86.png';
+  if (userRaw) {
+    try {
+      const user = JSON.parse(userRaw);
+      if (user.brandName !== undefined) brandName = user.brandName;
+      if (user.brandLogo !== undefined) brandLogo = user.brandLogo;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const [pages, setPages] = useState<PageData[]>([]);
   const [selectedSlug, setSelectedSlug] = useState('all');
   const [utmData, setUtmData] = useState<UTMItem[]>([]);
@@ -152,10 +168,14 @@ const AdminUtmAnalytics: React.FC = () => {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <a href="/admin/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="w-10 h-10 bg-mahindra-red rounded-lg flex items-center justify-center shadow-lg shadow-red-100">
-                  <Layout className="w-6 h-6 text-white" />
-                </div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Mahindra Logistic</h1>
+                {brandLogo && (
+                  <div className="h-10 w-auto flex items-center justify-center overflow-hidden">
+                    <img src={resolveMediaUrl(brandLogo)} alt={brandName || "Logo"} className="h-10 w-auto object-contain max-h-10" />
+                  </div>
+                )}
+                {brandName && (
+                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">{brandName}</h1>
+                )}
               </a>
             </div>
             <div className="flex items-center gap-4">

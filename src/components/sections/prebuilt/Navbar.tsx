@@ -13,8 +13,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ content, styles, isEditing }) => {
-  const { view } = useBuilderStore();
-  const logoSrc = resolveMediaUrl(content.logoImage || '/assets/images/86.png');
+  const { view, page } = useBuilderStore();
+  const logoSrc = resolveMediaUrl(content.logoImage || page.meta?.logoImage || '/assets/images/86.png');
   const isCenteredView = view === 'mobile' || view === 'tablet';
 
   return (

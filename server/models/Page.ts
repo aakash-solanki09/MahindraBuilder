@@ -20,6 +20,7 @@ const pageSchema = new mongoose.Schema({
   meta: {
     title: { type: String, default: 'Mahindra Logistics' },
     description: { type: String, default: '3PL Logistics & Warehousing Solutions' },
+    logoImage: { type: String, default: '' },
     gaMeasurementId: { type: String, default: '' },
     gtmId: { type: String, default: '' },
     pixelId: { type: String, default: '' },

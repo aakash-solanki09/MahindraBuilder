@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 import PropertyEditor from './PropertyEditor';
 import { useWorkshopStore } from '../../store/useWorkshopStore';
 import ImageUploadInput from '../ui/ImageUploadInput';
+import { resolveMediaUrl } from '../../lib/media';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -34,7 +35,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const {
     addSection, selectedSectionId, customTemplates, 
     removeCustomTemplate, setWorkshopMode,
-    setHtmlWorkshopMode, loadHtmlDesign, resetHtmlWorkshop
+    setHtmlWorkshopMode, loadHtmlDesign, resetHtmlWorkshop,
+    page
   } = useBuilderStore();
 
   const updatePageMeta = (updater: (meta: any) => any) => {
@@ -44,6 +46,20 @@ const Sidebar: React.FC<SidebarProps> = ({
       meta: updater(current.meta || {})
     });
   };
+
+  // Get dynamic branding details from localStorage
+  const userRaw = localStorage.getItem('user');
+  let brandName = 'Mahindra Logistics';
+  let brandLogo = '/assets/images/86.png';
+  if (userRaw) {
+    try {
+      const user = JSON.parse(userRaw);
+      if (user.brandName !== undefined) brandName = user.brandName;
+      if (user.brandLogo !== undefined) brandLogo = user.brandLogo;
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const pageName = useBuilderStore.getState().page.pageName || 'Mahindra Logistics';
   const pageSlug = useBuilderStore.getState().page.slug || 'preview';
@@ -182,10 +198,16 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={cn("flex flex-col h-full w-[280px] sm:w-80", !isSidebarOpen && "invisible")}>
         <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
           <a href="/admin/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-mahindra-blue rounded-lg flex items-center justify-center">
-              <Layout className="w-4 h-4 text-white" />
-            </div>
-            <h2 className="font-black text-lg tracking-tighter text-mahindra-blue uppercase">Mahindra Logistic</h2>
+            {brandLogo && (
+              <img 
+                src={resolveMediaUrl(brandLogo)} 
+                alt={brandName || "Logo"} 
+                className="h-10 w-auto object-contain max-w-[140px]" 
+              />
+            )}
+            {brandName && (
+              <h2 className="font-black text-lg tracking-tighter text-mahindra-blue uppercase">{brandName}</h2>
+            )}
           </a>
           <div className="flex gap-2">
             <button
@@ -332,6 +354,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onChange={(e) => useBuilderStore.getState().setPage({ ...useBuilderStore.getState().page, pageName: e.target.value })}
                     className="w-full p-3 border rounded-xl text-sm focus:ring-1 focus:ring-mahindra-red outline-none"
                     placeholder="e.g. Warehouse Landing Page"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Page Header Logo</label>
+                  <ImageUploadInput
+                    value={page.meta?.logoImage || '/assets/images/86.png'}
+                    onChange={(value) => updatePageMeta((meta) => ({ ...meta, logoImage: value }))}
+                    placeholder="/assets/images/86.png"
                   />
                 </div>
 

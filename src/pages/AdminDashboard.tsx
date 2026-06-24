@@ -15,13 +15,20 @@ import {
   Mail,
   Phone,
   Eye,
+  EyeOff,
   Filter,
   Calendar,
   Inbox,
-  BarChart3
+  BarChart3,
+  Settings,
+  Download
 } from 'lucide-react';
 import api from '../lib/api';
 import type { PageData } from '../types';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { resolveMediaUrl } from '../lib/media';
+import ImageUploadInput from '../components/ui/ImageUploadInput';
 
 type LeadItem = {
   _id: string;
@@ -37,6 +44,20 @@ type LeadItem = {
 };
 
 const AdminDashboard: React.FC = () => {
+  // Get active brand details
+  const userRaw = localStorage.getItem('user');
+  let brandName = 'Mahindra Logistics';
+  let brandLogo = '/assets/images/86.png';
+  if (userRaw) {
+    try {
+      const user = JSON.parse(userRaw);
+      if (user.brandName !== undefined) brandName = user.brandName;
+      if (user.brandLogo !== undefined) brandLogo = user.brandLogo;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const [pages, setPages] = useState<PageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +68,7 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   // Tab and Inquiries state
-  const [activeTab, setActiveTab] = useState<'pages' | 'inquiries' | 'utm'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'inquiries' | 'utm' | 'settings'>('pages');
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
@@ -56,9 +77,49 @@ const AdminDashboard: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedInquiry, setSelectedInquiry] = useState<LeadItem | null>(null);
 
+  // Settings & Profile state
+  const [settingsData, setSettingsData] = useState({
+    name: '',
+    email: '',
+    brandName: '',
+    brandLogo: '',
+    changePassword: false,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [updatingSettings, setUpdatingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsSuccess, setSettingsSuccess] = useState('');
+
+  // Show/Hide password toggles
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Export dropdown state
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
   useEffect(() => {
     fetchPages();
     fetchLeads();
+
+    // Initialize profile from localStorage
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      try {
+        const user = JSON.parse(userRaw);
+        setSettingsData(prev => ({
+          ...prev,
+          name: user.name || '',
+          email: user.email || '',
+          brandName: user.brandName !== undefined ? user.brandName : 'Mahindra Logistics',
+          brandLogo: user.brandLogo !== undefined ? user.brandLogo : '/assets/images/86.png'
+        }));
+      } catch (err) {
+        console.error('Failed to parse user from localStorage', err);
+      }
+    }
   }, []);
 
   const fetchLeads = async () => {
@@ -153,6 +214,187 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleUpdateSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsError('');
+    setSettingsSuccess('');
+
+    if (settingsData.changePassword) {
+      if (!settingsData.currentPassword) {
+        setSettingsError('Current password is required to change password');
+        return;
+      }
+      if (settingsData.newPassword !== settingsData.confirmPassword) {
+        setSettingsError('New passwords do not match');
+        return;
+      }
+      if (settingsData.newPassword.length < 6) {
+        setSettingsError('New password must be at least 6 characters long');
+        return;
+      }
+    }
+
+    setUpdatingSettings(true);
+    try {
+      const payload: any = {
+        name: settingsData.name,
+        email: settingsData.email,
+        brandName: settingsData.brandName,
+        brandLogo: settingsData.brandLogo
+      };
+
+      if (settingsData.changePassword) {
+        payload.currentPassword = settingsData.currentPassword;
+        payload.newPassword = settingsData.newPassword;
+      }
+
+      const res = await api.put('/auth/profile', payload);
+      
+      // Update local storage
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('token', res.data.token);
+
+      setSettingsSuccess('Profile settings updated successfully!');
+      setSettingsData(prev => ({
+        ...prev,
+        changePassword: false,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
+    } catch (err: any) {
+      console.error(err);
+      setSettingsError(err.response?.data?.message || 'Failed to update settings');
+    } finally {
+      setUpdatingSettings(false);
+    }
+  };
+
+  const exportToCSV = () => {
+    const headers = ['Name', 'Email', 'Phone', 'Message/Remarks', 'Source Page', 'Slug', 'Submitted At'];
+    const rows = filteredLeads.map(lead => [
+      lead.name || '',
+      lead.email || '',
+      lead.phone || '',
+      (lead.message || lead.needs || '').replace(/"/g, '""'),
+      lead.sourcePageName || lead.sourcePageSlug || 'preview',
+      lead.sourcePageSlug || 'preview',
+      lead.createdAt ? new Date(lead.createdAt).toLocaleString() : ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `enquiries_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToDoc = () => {
+    const docContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <title>User Enquiries</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #cccccc; padding: 8px; font-family: Arial, sans-serif; font-size: 11px; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          h2 { font-family: Arial, sans-serif; color: #111111; }
+        </style>
+      </head>
+      <body>
+        <h2>User Enquiries Report - Mahindra Logistics</h2>
+        <p>Generated on: ${new Date().toLocaleString()}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Message/Remarks</th>
+              <th>Source Page</th>
+              <th>Submitted At</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredLeads.map(lead => `
+              <tr>
+                <td>${lead.name || '-'}</td>
+                <td>${lead.email || '-'}</td>
+                <td>${lead.phone || '-'}</td>
+                <td>${lead.message || lead.needs || '-'}</td>
+                <td>${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})</td>
+                <td>${lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff' + docContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `enquiries_${new Date().toISOString().slice(0, 10)}.doc`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('User Enquiries Report - Mahindra Logistics', 14, 15);
+    
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()} | Total Enquiries: ${filteredLeads.length}`, 14, 22);
+
+    const tableHeaders = [['Name', 'Email', 'Phone', 'Message / Remarks', 'Source Page', 'Submitted At']];
+    
+    const tableRows = filteredLeads.map(lead => [
+      lead.name || '-',
+      lead.email || '-',
+      lead.phone || '-',
+      lead.message || lead.needs || '-',
+      `${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})`,
+      lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'
+    ]);
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableRows,
+      startY: 28,
+      theme: 'grid',
+      headStyles: { fillColor: [237, 28, 36], textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        3: { cellWidth: 70 },
+      }
+    });
+
+    doc.save(`enquiries_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   const handleCreatePage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPageData.name || !newPageData.slug) return;
@@ -217,10 +459,14 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <a href="/admin/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-mahindra-red rounded-lg flex items-center justify-center shadow-lg shadow-red-100">
-                <Layout className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Mahindra Logistic</h1>
+              {brandLogo && (
+                <div className="h-10 w-auto flex items-center justify-center overflow-hidden">
+                  <img src={resolveMediaUrl(brandLogo)} alt={brandName || "Logo"} className="h-10 w-auto object-contain max-h-10" />
+                </div>
+              )}
+              {brandName && (
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">{brandName}</h1>
+              )}
             </a>
             
             <div className="flex items-center gap-4">
@@ -291,9 +537,23 @@ const AdminDashboard: React.FC = () => {
               UTM Analytics
             </span>
           </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`pb-4 text-base sm:text-lg font-bold transition-all relative ${
+              activeTab === 'settings' ? 'text-mahindra-red' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Settings
+            </span>
+            {activeTab === 'settings' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-mahindra-red rounded-full" />
+            )}
+          </button>
         </div>
 
-        {activeTab === 'pages' ? (
+        {activeTab === 'pages' && (
           <>
             {/* Stats & Search */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -408,7 +668,9 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {activeTab === 'inquiries' && (
           <>
             {/* Stats & Search for Inquiries */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 mb-8 shadow-sm">
@@ -462,6 +724,45 @@ const AdminDashboard: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Export Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowExportDropdown(!showExportDropdown)}
+                      className="flex items-center gap-2 bg-mahindra-blue hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export Enquiries</span>
+                    </button>
+                    {showExportDropdown && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-20" 
+                          onClick={() => setShowExportDropdown(false)}
+                        ></div>
+                        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-30 py-1 font-semibold text-gray-700 animate-in fade-in slide-in-from-top-1 duration-150">
+                          <button
+                            onClick={() => { exportToCSV(); setShowExportDropdown(false); }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
+                          >
+                            <span>Export as CSV (.csv)</span>
+                          </button>
+                          <button
+                            onClick={() => { exportToPDF(); setShowExportDropdown(false); }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
+                          >
+                            <span>Export as PDF (.pdf)</span>
+                          </button>
+                          <button
+                            onClick={() => { exportToDoc(); setShowExportDropdown(false); }}
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
+                          >
+                            <span>Export as Word (.doc)</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -614,6 +915,164 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
           </>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="max-w-xl mx-auto bg-white border border-gray-200 rounded-3xl p-8 shadow-sm">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Profile & Password Settings</h2>
+              <p className="text-gray-500 mt-1 text-sm">Update your admin credentials and login password.</p>
+            </div>
+
+            <form onSubmit={handleUpdateSettings} className="space-y-6">
+              {/* Name and Email */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all"
+                    value={settingsData.name}
+                    onChange={(e) => setSettingsData({ ...settingsData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Username / Email</label>
+                  <input
+                    type="email"
+                    required
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all"
+                    value={settingsData.email}
+                    onChange={(e) => setSettingsData({ ...settingsData, email: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Brand Logo Image</label>
+                    <ImageUploadInput
+                      value={settingsData.brandLogo}
+                      onChange={(value) => setSettingsData({ ...settingsData, brandLogo: value })}
+                      placeholder="/assets/images/86.png"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Brand Corporate Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all text-sm font-semibold"
+                      value={settingsData.brandName}
+                      onChange={(e) => setSettingsData({ ...settingsData, brandName: e.target.value })}
+                      placeholder="e.g. Mahindra Logistics"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-150 my-6" />
+
+              {/* Change Password checkbox */}
+              <div className="mb-4">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={settingsData.changePassword}
+                    onChange={(e) => setSettingsData({ ...settingsData, changePassword: e.target.checked })}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-mahindra-red"></div>
+                  <span className="ms-3 text-sm font-semibold text-gray-700">Change password</span>
+                </label>
+              </div>
+
+              {settingsData.changePassword && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        required={settingsData.changePassword}
+                        placeholder="Current password"
+                        className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all"
+                        value={settingsData.currentPassword}
+                        onChange={(e) => setSettingsData({ ...settingsData, currentPassword: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">New Password</label>
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          required={settingsData.changePassword}
+                          placeholder="New password"
+                          className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all"
+                          value={settingsData.newPassword}
+                          onChange={(e) => setSettingsData({ ...settingsData, newPassword: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Confirm New Password</label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          required={settingsData.changePassword}
+                          placeholder="Confirm password"
+                          className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-205 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all"
+                          value={settingsData.confirmPassword}
+                          onChange={(e) => setSettingsData({ ...settingsData, confirmPassword: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsError && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold border border-red-100">
+                  {settingsError}
+                </div>
+              )}
+
+              {settingsSuccess && (
+                <div className="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-semibold border border-green-100">
+                  {settingsSuccess}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={updatingSettings}
+                className="w-full py-3.5 bg-mahindra-red text-white font-bold rounded-xl shadow-lg shadow-red-100 hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {updatingSettings ? 'Saving Changes...' : 'Save Settings'}
+              </button>
+            </form>
+          </div>
         )}
       </main>
 

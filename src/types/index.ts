@@ -71,6 +71,7 @@ export interface PageData {
   meta: {
     title: string;
     description: string;
+    logoImage?: string;
     gaMeasurementId?: string;
     gtmId?: string;
     pixelId?: string;
@@ -102,4 +103,6 @@ export interface User {
   role: 'admin' | 'client';
   name?: string;
   token?: string;
+  brandName?: string;
+  brandLogo?: string;
 }
