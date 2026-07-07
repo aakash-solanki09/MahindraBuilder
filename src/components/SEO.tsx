@@ -56,10 +56,14 @@ export default function SEO({
       ? `${window.location.origin}${path}`
       : `https://mywebsite.com${path}`;
 
+  const isTargetUrl = typeof window !== "undefined" && 
+    (window.location.hostname === "campaign.mahindralogistics.com" || window.location.host === "campaign.mahindralogistics.com") && 
+    (path === "/" || window.location.pathname === "/");
+
   const defaults: MetaAttribute[] = [
     { name: "keywords", content: `${safePageName}, logistics, warehousing, supply chain` },
     { name: "author", content: "MyWebsite" },
-    { name: "robots", content: "index, follow" },
+    { name: "robots", content: isTargetUrl ? "noindex" : "index, follow" },
     { name: "viewport", content: "width=device-width, initial-scale=1.0" },
     { name: "theme-color", content: "#ffffff" },
     { property: "og:type", content: "website" },

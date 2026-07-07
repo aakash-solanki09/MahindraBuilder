@@ -30,7 +30,7 @@ const IframeRenderer: React.FC<{ html: string; css: string }> = ({ html, css }) 
     const fullHtml = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>${css}</style></head>
-<body style="margin:0;padding:0">${html}</body></html>`;
+<body style="margin:0;padding:0;overflow:hidden;">${html}</body></html>`;
 
     doc.open();
     doc.write(fullHtml);
@@ -39,18 +39,39 @@ const IframeRenderer: React.FC<{ html: string; css: string }> = ({ html, css }) 
     const updateHeight = () => {
       const body = doc.body;
       const ht = doc.documentElement;
+      if (!body) return;
       const h = Math.max(body.scrollHeight, body.offsetHeight, ht.clientHeight, ht.scrollHeight, ht.offsetHeight);
-      if (h > 0) setHeight(h + 20);
+      if (h > 0) {
+        setHeight((prev) => (Math.abs(prev - h) > 2 ? h : prev));
+      }
     };
 
-    updateHeight();
+    const timer = setTimeout(updateHeight, 100);
     const observer = new ResizeObserver(updateHeight);
     observer.observe(doc.body);
 
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [html, css]);
 
-  return <iframe ref={iframeRef} style={{ width: '100%', height, border: 'none' }} title="custom-html" />;
+  const hasVh = css.includes('vh') || html.includes('vh');
+
+  return (
+    <iframe
+      ref={iframeRef}
+      style={{
+        width: '100%',
+        height: height || 'auto',
+        minHeight: hasVh ? '100vh' : undefined,
+        border: 'none',
+        overflow: 'hidden'
+      }}
+      scrolling="no"
+      title="custom-html"
+    />
+  );
 };
 
 const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles, isEditing, view: propView }) => {
@@ -74,7 +95,15 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
 
   const normalizeStyles = (s: any) => {
     if (!s) return {};
-    const normalized = { ...s };
+    
+    // Convert keys from kebab-case to camelCase for React compatibility
+    const camelized: any = {};
+    for (const [key, val] of Object.entries(s)) {
+      const camelKey = key.startsWith('--') ? key : key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+      camelized[camelKey] = val;
+    }
+
+    const normalized = { ...camelized };
     
     const expand = (val: string) => {
       if (!val) return null;
@@ -86,24 +115,24 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
       return null;
     };
 
-    if (s.paddingTop || s.paddingRight || s.paddingBottom || s.paddingLeft || s.padding === '') {
-      const parts = expand(s.padding);
+    if (camelized.paddingTop || camelized.paddingRight || camelized.paddingBottom || camelized.paddingLeft || camelized.padding === '') {
+      const parts = expand(camelized.padding);
       if (parts) {
-        normalized.paddingTop = s.paddingTop || parts[0];
-        normalized.paddingRight = s.paddingRight || parts[1];
-        normalized.paddingBottom = s.paddingBottom || parts[2];
-        normalized.paddingLeft = s.paddingLeft || parts[3];
+        normalized.paddingTop = camelized.paddingTop || parts[0];
+        normalized.paddingRight = camelized.paddingRight || parts[1];
+        normalized.paddingBottom = camelized.paddingBottom || parts[2];
+        normalized.paddingLeft = camelized.paddingLeft || parts[3];
       }
       delete normalized.padding;
     }
 
-    if (s.marginTop || s.marginRight || s.marginBottom || s.marginLeft || s.margin === '') {
-      const parts = expand(s.margin);
+    if (camelized.marginTop || camelized.marginRight || camelized.marginBottom || camelized.marginLeft || camelized.margin === '') {
+      const parts = expand(camelized.margin);
       if (parts) {
-        normalized.marginTop = s.marginTop || parts[0];
-        normalized.marginRight = s.marginRight || parts[1];
-        normalized.marginBottom = s.marginBottom || parts[2];
-        normalized.marginLeft = s.marginLeft || parts[3];
+        normalized.marginTop = camelized.marginTop || parts[0];
+        normalized.marginRight = camelized.marginRight || parts[1];
+        normalized.marginBottom = camelized.marginBottom || parts[2];
+        normalized.marginLeft = camelized.marginLeft || parts[3];
       }
       delete normalized.margin;
     }
@@ -310,7 +339,7 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
   // 🔥 LIVE PAGE: If raw HTML/CSS is stored, render in iframe for FULL CSS support
   if (!isEditing && content.rawHtml) {
     return (
-      <section style={{ ...styles, minHeight: '200px' }} className="w-full relative">
+      <section style={{ ...normalizeStyles(styles), minHeight: '200px' }} className="w-full relative">
         <IframeRenderer html={content.rawHtml} css={content.rawCss || ''} />
       </section>
     );
@@ -334,7 +363,7 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
   return (
     <section 
       style={{ 
-        ...styles,
+        ...normalizeStyles(styles),
         minHeight: rootStyles?.minHeight || rootStyles?.height || styles?.minHeight || 'auto'
       }}
       onClick={() => isEditing && setSelectedHtmlElement(null)}

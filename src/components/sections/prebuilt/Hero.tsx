@@ -108,9 +108,9 @@ const Hero: React.FC<HeroProps> = ({
   ];
 
   // 🔥 DYNAMIC: Use builder-defined fields if explicitly set (even empty array = user cleared), otherwise fallback to defaults
-  const hasCustomFields = Array.isArray(content.formFields);
+  const hasCustomFields = content && Array.isArray(content.formFields);
 
-  const fields = (hasCustomFields ? content.formFields : defaultFormFields).map((field: any) => {
+  const fields = (hasCustomFields && content?.formFields ? content.formFields : defaultFormFields).map((field: any) => {
     // Ensure each field has a salesforceFieldId (default to field name if not set)
     if (!field.salesforceFieldId) field.salesforceFieldId = field.name;
     // Ensure type is valid

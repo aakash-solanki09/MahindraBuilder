@@ -53,7 +53,7 @@ export function parseHtmlForm(html: string): ParsedFormField[] {
       }
     }
     if (!label) {
-      label = name.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      label = name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
     }
 
     // Determine field type
