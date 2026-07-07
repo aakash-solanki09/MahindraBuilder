@@ -1,4 +1,4 @@
-// Deployment Trigger: Final Sync
+// Deployment Trigger: Connection Test Pull Verification
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AdminBuilder from './pages/AdminBuilder';
