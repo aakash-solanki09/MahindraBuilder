@@ -666,7 +666,7 @@ const Form = ({
   >
     <div className={cn(
       "grid gap-x-4",
-      isCenteredView ? "grid-cols-1 gap-y-4" : "grid-cols-2 gap-y-2.5"
+      isCenteredView ? "grid-cols-1 gap-y-4" : "grid-cols-1 sm:grid-cols-2 gap-y-2.5"
     )}>
       {fields.map((field: any, idx: number) => {
         const isFullWidth = field.name === '00N4x00000bbbEM' || field.type === 'textarea';
