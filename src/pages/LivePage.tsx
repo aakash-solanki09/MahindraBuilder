@@ -206,6 +206,7 @@ const LivePage: React.FC = () => {
   if (error || !page.sections || page.sections.length === 0) {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-center p-6 bg-slate-50">
+        <SEO pageName="Mahindra Logistics" slug={slug || "preview"} meta={{ title: "Mahindra Logistics", description: "To know more about services, please visit our official website." }} />
         <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl max-w-xl w-full border border-slate-100 flex flex-col items-center">
           <img src="/assets/images/86.png" alt="Mahindra Logistics" className="h-[65px] w-[271px] object-contain mb-6" />
           <p className="text-lg md:text-xl font-semibold text-slate-700 mb-6 leading-relaxed">
