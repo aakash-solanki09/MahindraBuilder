@@ -178,6 +178,66 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
 
                 // 🔥 UNLOCKED: Form fields are now fully editable
 
+                if (key === 'salesforce') {
+                  const sfVal = value || {};
+                  return (
+                    <div key={key} className="space-y-3 p-3 bg-gray-50 rounded-xl border border-mahindra-blue/20">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                          Salesforce Settings
+                        </label>
+                      </div>
+                      
+                      <div className="space-y-2.5">
+                        <div>
+                          <label className="text-[8px] font-black text-gray-400 uppercase">Connection URL</label>
+                          <input
+                            type="text"
+                            value={sfVal.url || ''}
+                            onChange={(e) => {
+                              updateSectionContent(selectedSection.id, {
+                                salesforce: { ...sfVal, url: e.target.value }
+                              });
+                            }}
+                            placeholder="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8"
+                            className="w-full p-2 text-xs border rounded-lg focus:border-mahindra-red outline-none bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[8px] font-black text-gray-400 uppercase">Org ID (oid)</label>
+                          <input
+                            type="text"
+                            value={sfVal.orgId || ''}
+                            onChange={(e) => {
+                              updateSectionContent(selectedSection.id, {
+                                salesforce: { ...sfVal, orgId: e.target.value }
+                              });
+                            }}
+                            placeholder="e.g. 00D4x000007sh6p"
+                            className="w-full p-2 text-xs border rounded-lg focus:border-mahindra-red outline-none bg-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[8px] font-black text-gray-400 uppercase">Record Type ID</label>
+                          <input
+                            type="text"
+                            value={sfVal.recordType || ''}
+                            onChange={(e) => {
+                              updateSectionContent(selectedSection.id, {
+                                salesforce: { ...sfVal, recordType: e.target.value }
+                              });
+                            }}
+                            placeholder="e.g. 012Vt0000023hFO"
+                            className="w-full p-2 text-xs border rounded-lg focus:border-mahindra-red outline-none bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (isList) {
                   return (
                     <div key={key} className="space-y-3 p-3 bg-gray-50 rounded-xl border">
