@@ -118,10 +118,8 @@ const LivePage: React.FC = () => {
       setShowOtpModal(true);
     };
     document.addEventListener('submit', intercept);
-    console.log('[OTP] Form interceptor attached');
     return () => {
       document.removeEventListener('submit', intercept);
-      console.log('[OTP] Form interceptor removed');
     };
   }, []);
 
@@ -156,7 +154,6 @@ const LivePage: React.FC = () => {
           sourcePath: location.pathname,
         });
       } catch (err) {
-        console.error('No published page found or error fetching', err);
         setError(true);
       } finally {
         setLoading(false);
