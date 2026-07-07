@@ -134,10 +134,13 @@ const buildElementTree = (element: Element, rules: CssRule[]): HtmlElement[] => 
   const directText = getDirectText(element);
   const textTypes = new Set<HtmlElementType>(['heading', 'paragraph', 'button', 'label', 'option', 'span', 'link', 'textarea']);
 
+  // 🔥 Fix: Preserve text content for ANY element that has no children (including div, form, etc.)
+  const shouldPreserveText = childElements.length === 0 && directText.length > 0;
+
   const htmlElement: HtmlElement = {
     id: attributes.id || createId(),
     type: mappedType,
-    content: textTypes.has(mappedType) && childElements.length === 0 ? directText : '',
+    content: shouldPreserveText ? directText : (textTypes.has(mappedType) && childElements.length === 0 ? directText : ''),
     styles,
     attributes,
     children: childElements,

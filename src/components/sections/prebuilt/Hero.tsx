@@ -94,117 +94,30 @@ const Hero: React.FC<HeroProps> = ({
   const isCenteredView =
     view === 'mobile' || view === 'tablet';
 
+  // Default fields (fallback when no custom fields defined in builder)
   const defaultFormFields = [
-    {
-      name: 'first_name',
-      label: 'First Name *',
-      placeholder: 'Enter first name...',
-      type: 'text',
-      required: true,
-      pattern: '^[A-Za-z ]+$',
-      inputMode: 'text',
-    },
-    {
-      name: 'last_name',
-      label: 'Last Name *',
-      placeholder: 'Enter last name...',
-      type: 'text',
-      required: true,
-      pattern: '^[A-Za-z ]+$',
-      inputMode: 'text',
-    },
-    {
-      name: 'email',
-      label: 'Email *',
-      placeholder: 'Enter email address...',
-      type: 'email',
-      required: true,
-    },
-    {
-      name: 'mobile',
-      label: 'Mobile *',
-      placeholder: 'Enter 10-digit mobile...',
-      type: 'text',
-      prefix: '+91',
-      maxLength: 10,
-      pattern: '[0-9]*',
-      inputMode: 'numeric',
-      required: true,
-    },
-    {
-      name: 'company',
-      label: 'Company *',
-      placeholder: 'Enter company name...',
-      type: 'text',
-      required: true,
-      pattern: '^[A-Za-z ]+$',
-      inputMode: 'text',
-    },
-    {
-      name: 'city',
-      label: 'City *',
-      placeholder: 'Enter city...',
-      type: 'text',
-      required: true,
-      pattern: '^[A-Za-z ]+$',
-      inputMode: 'text',
-    },
-    {
-      name: 'zip',
-      label: 'Pin Code *',
-      placeholder: 'Enter pin code...',
-      type: 'text',
-      required: true,
-      maxLength: 20,
-      pattern: '[0-9]*',
-      inputMode: 'numeric',
-    },
-    {
-      name: '00N4x00000bbbE3',
-      label: 'Interested In *',
-      placeholder: 'Select Option',
-      type: 'select',
-      options: ['Surface Express'],
-      required: true,
-    },
-    {
-      name: '00N4x00000bbbEM',
-      label: 'Remarks *',
-      placeholder: 'Enter remarks...',
-      type: 'text',
-      maxLength: 255,
-      required: true,
-    },
+    { name: 'first_name', label: 'First Name *', placeholder: 'Enter first name...', type: 'text' as const, required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text' as const, salesforceFieldId: 'first_name' },
+    { name: 'last_name', label: 'Last Name *', placeholder: 'Enter last name...', type: 'text' as const, required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text' as const, salesforceFieldId: 'last_name' },
+    { name: 'email', label: 'Email *', placeholder: 'Enter email address...', type: 'email' as const, required: true, inputMode: 'email' as const, salesforceFieldId: 'email' },
+    { name: 'mobile', label: 'Mobile *', placeholder: 'Enter 10-digit mobile...', type: 'text' as const, required: true, maxLength: 10, pattern: '[0-9]*', prefix: '+91', inputMode: 'numeric' as const, salesforceFieldId: 'mobile' },
+    { name: 'company', label: 'Company *', placeholder: 'Enter company name...', type: 'text' as const, required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text' as const, salesforceFieldId: 'company' },
+    { name: 'city', label: 'City *', placeholder: 'Enter city...', type: 'text' as const, required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text' as const, salesforceFieldId: 'city' },
+    { name: 'zip', label: 'Pin Code *', placeholder: 'Enter pin code...', type: 'text' as const, required: true, maxLength: 20, pattern: '[0-9]*', inputMode: 'numeric' as const, salesforceFieldId: 'zip' },
+    { name: '00N4x00000bbbE3', label: 'Interested In *', placeholder: 'Select Option', type: 'select' as const, required: true, options: ['Surface Express'], salesforceFieldId: '00N4x00000bbbE3' },
+    { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'text' as const, required: true, maxLength: 255, salesforceFieldId: '00N4x00000bbbEM' },
   ];
 
-  const contentFormFields = Array.isArray(content.formFields) ? content.formFields : [];
-  const fieldStyleByName = new Map(
-    contentFormFields
-      .filter((field: any) => typeof field?.name === 'string')
-      .map((field: any) => [String(field.name).toLowerCase(), field])
-  );
+  // 🔥 DYNAMIC: Use builder-defined fields if explicitly set (even empty array = user cleared), otherwise fallback to defaults
+  const hasCustomFields = Array.isArray(content.formFields);
 
-  // Keep form structure static. Only style props can be overridden from content.formFields.
-  const fields = defaultFormFields.map((field: any) => {
-    const styleSource = fieldStyleByName.get(String(field.name).toLowerCase());
-
-    if (!styleSource) {
-      return field;
+  const fields = (hasCustomFields ? content.formFields : defaultFormFields).map((field: any) => {
+    // Ensure each field has a salesforceFieldId (default to field name if not set)
+    if (!field.salesforceFieldId) field.salesforceFieldId = field.name;
+    // Ensure type is valid
+    if (!['text', 'email', 'select', 'textarea', 'number', 'tel', 'hidden'].includes(field.type)) {
+      field.type = 'text';
     }
-
-    return {
-      ...field,
-      options: styleSource.options || field.options,
-      labelColor: styleSource.labelColor,
-      labelBgColor: styleSource.labelBgColor,
-      labelBorderColor: styleSource.labelBorderColor,
-      placeholderColor: styleSource.placeholderColor,
-      placeholderBgColor: styleSource.placeholderBgColor,
-      placeholderBorderColor: styleSource.placeholderBorderColor,
-      inputColor: styleSource.inputColor,
-      inputBgColor: styleSource.inputBgColor,
-      inputBorderColor: styleSource.inputBorderColor,
-    };
+    return field;
   });
 
   const submitLeadData = async () => {
@@ -218,17 +131,30 @@ const Hero: React.FC<HeroProps> = ({
 
     const storedUTM = getStoredUTMParams();
 
+    // Build Salesforce field mapping from dynamic fields
+    const salesforceFieldMap: Record<string, string> = {};
+    fields.forEach((f: any) => {
+      if (f.salesforceFieldId) {
+        salesforceFieldMap[f.name] = f.salesforceFieldId;
+      }
+    });
+
+    // Use page-specific Salesforce config if available
+    const sfConfig = (content as any).salesforce || {};
+
     await api.post('/leads', {
       ...formData,
       ...storedUTM,
-      oid: '00D4x000007sh6p',
+      _fieldMap: salesforceFieldMap,   // Dynamic field mapping for server
+      _salesforce: sfConfig,           // Per-page Salesforce config
+      oid: sfConfig.orgId || '00D4x000007sh6p',
       retURL: 'http://google.com',
-      recordType: '012Vt0000023hFO',
+      recordType: sfConfig.recordType || '012Vt0000023hFO',
       Vertical_DH__c: 'Not specified',
       lead_source: 'Campaign',
       Entity__c: 'MESPL',
-      debug: 0,
-      debugEmail: 'amin.noumita@mahindralogistics.com',
+      debug: sfConfig.debug ?? 0,
+      debugEmail: sfConfig.debugEmail || 'amin.noumita@mahindralogistics.com',
       sourcePageName: resolvedName,
       sourcePageSlug: resolvedSlug,
       sourcePath: location.pathname,
@@ -239,44 +165,38 @@ const Hero: React.FC<HeroProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Dynamic validation based on field configs
     const nameRegex = /^[A-Za-z ]+$/;
-    if (formData.first_name && !nameRegex.test(formData.first_name)) {
-      alert('First Name should contain only alphabets and spaces.');
-      return;
-    }
-    if (formData.last_name && !nameRegex.test(formData.last_name)) {
-      alert('Last Name should contain only alphabets and spaces.');
-      return;
-    }
-    if (formData.company && !nameRegex.test(formData.company)) {
-      alert('Company Name should contain only alphabets and spaces.');
-      return;
-    }
-    if (formData.city && !nameRegex.test(formData.city)) {
-      alert('City Name should contain only alphabets and spaces.');
-      return;
+    const mobileField = fields.find((f: any) => f.name === 'mobile' || f.type === 'tel' || (f.inputMode === 'numeric' && f.maxLength === 10));
+    const phone = mobileField ? String(formData[mobileField.name] || '').replace(/\D/g, '') : '';
+
+    for (const field of fields) {
+      const val = formData[field.name];
+      const isRequired = field.required !== false;
+
+      if (isRequired && (!val || !String(val).trim())) {
+        alert(`${field.label || field.name} is required.`);
+        return;
+      }
+
+      // Name fields validation
+      if (field.pattern === '^[A-Za-z ]+$' && val && !nameRegex.test(String(val))) {
+        alert(`${field.label || field.name} should contain only alphabets and spaces.`);
+        return;
+      }
+
+      // Numeric fields validation
+      if (field.pattern === '[0-9]*' && val && !/^[0-9]+$/.test(String(val))) {
+        alert(`${field.label || field.name} should contain only numbers.`);
+        return;
+      }
     }
 
-    const phone = String(formData.mobile || '').replace(/\D/g, '');
-    if (!phone || phone.length < 10) {
-      alert('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    if (!formData.city || !formData.city.trim()) {
-      alert('City is required.');
-      return;
-    }
-
-    if (!formData.zip || !formData.zip.trim()) {
-      alert('Pin Code is required.');
-      return;
-    }
-
-    const pinRegex = /^[0-9]+$/;
-    if (formData.zip && !pinRegex.test(formData.zip)) {
-      alert('Pin Code should contain only numbers.');
-      return;
+    if (mobileField) {
+      if (!phone || phone.length < 10) {
+        alert('Please enter a valid 10-digit mobile number.');
+        return;
+      }
     }
 
     setSendingOtp(true);
@@ -308,18 +228,32 @@ const Hero: React.FC<HeroProps> = ({
       [name]: value,
     }));
 
-    if (name === 'mobile' && otpVerified) {
-      setOtpVerified(false);
+    // Reset OTP when mobile-like field changes
+    const isMobileField = name === 'mobile' || name === 'phone' || 
+      fields.some((f: any) => f.name === name && (f.type === 'tel' || (f.inputMode === 'numeric' && f.maxLength === 10)));
+    
+    if (isMobileField) {
+      if (otpVerified) setOtpVerified(false);
       setOtp('');
-    }
-
-    if (name === 'mobile') {
       setOtpSent(false);
     }
   };
 
+  // Helper: get mobile phone from formData dynamically
+  const getMobileFromForm = () => {
+    const mobileField = fields.find((f: any) => f.name === 'mobile' || f.name === 'phone' || f.type === 'tel' || (f.inputMode === 'numeric' && f.maxLength === 10));
+    const val = mobileField ? String(formData[mobileField.name] || '') : '';
+    return val.replace(/\D/g, '');
+  };
+
+  // Helper: get mobile display value
+  const getMobileDisplay = () => {
+    const mobileField = fields.find((f: any) => f.name === 'mobile' || f.name === 'phone' || f.type === 'tel' || (f.inputMode === 'numeric' && f.maxLength === 10));
+    return mobileField ? String(formData[mobileField.name] || '') : '';
+  };
+
   const handleResendOtp = async () => {
-    const phone = String(formData.mobile || '').replace(/\D/g, '');
+    const phone = getMobileFromForm();
     if (!phone || phone.length < 10) {
       setOtpError('Invalid mobile number.');
       return;
@@ -343,7 +277,7 @@ const Hero: React.FC<HeroProps> = ({
   };
 
   const handleVerifyAndSubmit = async () => {
-    const phone = String(formData.mobile || '').replace(/\D/g, '');
+    const phone = getMobileFromForm();
     if (!phone || phone.length < 10) {
       setOtpError('Please enter a valid mobile number.');
       return;
@@ -633,7 +567,7 @@ const Hero: React.FC<HeroProps> = ({
           <div className="bg-[#181D31]/95 border border-white/10 rounded-[28px] w-full max-w-md p-8 shadow-2xl relative text-white animate-in fade-in zoom-in duration-200">
             <h3 className="text-2xl font-bold mb-2 tracking-tight text-white">Verify Your Mobile</h3>
             <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-              We've sent a 4-digit OTP code to <span className="font-semibold text-white">+91 {formData.mobile}</span> via SMS.
+              We've sent a 4-digit OTP code to <span className="font-semibold text-white">+91 {getMobileDisplay()}</span> via SMS.
             </p>
 
             <div className="space-y-4">

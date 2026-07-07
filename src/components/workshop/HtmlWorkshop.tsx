@@ -127,7 +127,7 @@ const HtmlWorkshop: React.FC = () => {
       useBuilderStore.setState({
         htmlWorkshopSection: {
           ...(htmlWorkshopSection || { type: 'html-builder', content: { elements: [] }, styles: {} }),
-          content: { elements: parsed.elements },
+          content: { elements: parsed.elements, rawHtml: importHtml, rawCss: importCss },
           styles: parsed.styles,
         },
         selectedHtmlElementId: 'root-container'

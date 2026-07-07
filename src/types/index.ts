@@ -46,6 +46,73 @@ export interface HtmlElement {
   children: HtmlElement[];
 }
 
+export interface FormField {
+  name: string;
+  label?: string;
+  placeholder: string;
+  type: 'text' | 'email' | 'select' | 'textarea' | 'number' | 'tel' | 'hidden';
+  required?: boolean;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;
+  inputMode?: 'text' | 'numeric' | 'email' | 'tel' | 'url' | 'decimal' | 'search';
+  prefix?: string;
+  options?: string[];
+  // Salesforce mapping
+  salesforceFieldId?: string;
+  // Style overrides
+  labelColor?: string;
+  labelBgColor?: string;
+  labelBorderColor?: string;
+  placeholderColor?: string;
+  placeholderBgColor?: string;
+  placeholderBorderColor?: string;
+  inputColor?: string;
+  inputBgColor?: string;
+  inputBorderColor?: string;
+}
+
+export interface HeroContent {
+  title1?: string;
+  title2?: string;
+  title3?: string;
+  title1Color?: string;
+  title2Color?: string;
+  title3Color?: string;
+  title1BgColor?: string;
+  title2BgColor?: string;
+  title3BgColor?: string;
+  title1BorderColor?: string;
+  title2BorderColor?: string;
+  title3BorderColor?: string;
+  subtitle: string;
+  subtitleColor?: string;
+  subtitleBgColor?: string;
+  buttonText: string;
+  submitButtonText?: string;
+  submitButtonTextColor?: string;
+  submitButtonTextBgColor?: string;
+  submitButtonTextBorderColor?: string;
+  backgroundImage?: string;
+  formTitle?: string;
+  formTitleColor?: string;
+  formTitleBgColor?: string;
+  formFields?: FormField[];
+  // Thank-you page content
+  thankYouHeading?: string;
+  thankYouTitle?: string;
+  thankYouMessage?: string;
+  thankYouButtonText?: string;
+  // Salesforce configuration (per-page override)
+  salesforce?: {
+    url?: string;
+    orgId?: string;
+    recordType?: string;
+    debug?: number;
+    debugEmail?: string;
+  };
+}
+
 export interface Section {
   id: string;
   type: SectionType;

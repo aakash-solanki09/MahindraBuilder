@@ -7,11 +7,51 @@ import { resolveMediaUrl } from '../../../lib/media';
 interface HtmlBuilderSectionProps {
   content: {
     elements?: HtmlElement[];
+    rawHtml?: string;
+    rawCss?: string;
   };
   styles: any;
   isEditing?: boolean;
   view?: 'desktop' | 'tablet' | 'mobile';
 }
+
+// 🔥 Iframe-based rendering for live page — full CSS support (media queries, pseudo-classes, animations)
+const IframeRenderer: React.FC<{ html: string; css: string }> = ({ html, css }) => {
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = React.useState(400);
+
+  React.useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const fullHtml = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>${css}</style></head>
+<body style="margin:0;padding:0">${html}</body></html>`;
+
+    doc.open();
+    doc.write(fullHtml);
+    doc.close();
+
+    const updateHeight = () => {
+      const body = doc.body;
+      const ht = doc.documentElement;
+      const h = Math.max(body.scrollHeight, body.offsetHeight, ht.clientHeight, ht.scrollHeight, ht.offsetHeight);
+      if (h > 0) setHeight(h + 20);
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(doc.body);
+
+    return () => observer.disconnect();
+  }, [html, css]);
+
+  return <iframe ref={iframeRef} style={{ width: '100%', height, border: 'none' }} title="custom-html" />;
+};
 
 const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles, isEditing, view: propView }) => {
   const { selectedHtmlElementId, setSelectedHtmlElement } = useBuilderStore();
@@ -107,8 +147,8 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
       case 'div':
         return (
           <div key={el.id} {...commonProps}>
-            {renderChildren()}
-            {isEditing && (!el.children || el.children.length === 0) && (
+            {hasChildren ? renderChildren() : (el.content || null)}
+            {isEditing && !hasChildren && !el.content && (
               <div className="w-full h-full min-w-[100px] min-h-[40px] flex items-center justify-center opacity-0 hover:opacity-100 bg-blue-50/50 text-[10px] text-blue-500 font-medium border border-dashed border-blue-200">
                 Empty Div
               </div>
@@ -125,8 +165,8 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
             target={el.attributes?.target || undefined}
             noValidate={el.attributes?.novalidate !== undefined}
           >
-            {renderChildren()}
-            {isEditing && (!el.children || el.children.length === 0) && (
+            {hasChildren ? renderChildren() : (el.content || null)}
+            {isEditing && !hasChildren && !el.content && (
               <div className="w-full h-full min-w-[100px] min-h-[40px] flex items-center justify-center opacity-0 hover:opacity-100 bg-blue-50/50 text-[10px] text-blue-500 font-medium border border-dashed border-blue-200">
                 Empty Form
               </div>
@@ -266,6 +306,15 @@ const HtmlBuilderSection: React.FC<HtmlBuilderSectionProps> = ({ content, styles
         return null;
     }
   };
+
+  // 🔥 LIVE PAGE: If raw HTML/CSS is stored, render in iframe for FULL CSS support
+  if (!isEditing && content.rawHtml) {
+    return (
+      <section style={{ ...styles, minHeight: '200px' }} className="w-full relative">
+        <IframeRenderer html={content.rawHtml} css={content.rawCss || ''} />
+      </section>
+    );
+  }
 
   if (!content.elements || content.elements.length === 0) {
     return (

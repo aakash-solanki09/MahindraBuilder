@@ -1,6 +1,6 @@
 import React from 'react';
 import { useBuilderStore } from '../../store/useBuilderStore';
-import { Layout, ChevronRight, Save, CloudUpload, PanelTop, Monitor, CheckCircle, Package, Globe, Settings, Map as MapIcon, ChevronDown, Image as ImageIcon, Cpu, Users, FileText, Play as PlayIcon, Edit2, Trash2 } from 'lucide-react';
+import { Layout, ChevronRight, Save, CloudUpload, PanelTop, Monitor, CheckCircle, Package, Globe, Settings, Map as MapIcon, ChevronDown, Image as ImageIcon, Cpu, Users, FileText, Play as PlayIcon, Edit2, Trash2, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import PropertyEditor from './PropertyEditor';
 import { useWorkshopStore } from '../../store/useWorkshopStore';
@@ -192,10 +192,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className={cn(
       "bg-white border-r flex flex-col shadow-xl z-[100] transition-all duration-500 ease-in-out",
-      isSidebarOpen ? "w-[280px] sm:w-80 translate-x-0" : "w-0 -translate-x-full lg:w-0 lg:-translate-x-full",
+      isSidebarOpen ? "w-[320px] sm:w-96 translate-x-0" : "w-0 -translate-x-full lg:w-0 lg:-translate-x-full",
       "fixed lg:relative h-full"
     )}>
-      <div className={cn("flex flex-col h-full w-[280px] sm:w-80", !isSidebarOpen && "invisible")}>
+      <div className={cn("flex flex-col h-full w-[320px] sm:w-96", !isSidebarOpen && "invisible")}>
         <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
           <a href="/admin/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             {brandLogo && (

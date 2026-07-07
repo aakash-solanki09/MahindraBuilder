@@ -1173,66 +1173,97 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {/* View Inquiry Details Modal */}
-      {selectedInquiry && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {selectedInquiry && (() => {
+        // Human-readable labels for known field names
+        const fieldLabelMap: Record<string, string> = {
+          'pageId': 'Page ID',
+          'first_name': 'First Name',
+          'last_name': 'Last Name',
+          'mobile': 'Mobile',
+          'company': 'Company',
+          'city': 'City',
+          'zip': 'Pin Code',
+          '00N4x00000bbbE3': 'Interested In',
+          '00N4x00000bbbEM': 'Remarks',
+          'utm_source': 'UTM Source',
+          'utm_medium': 'UTM Medium',
+          'utm_campaign': 'UTM Campaign',
+          'utm_id': 'UTM ID',
+          'utm_term': 'UTM Term',
+          'utm_content': 'UTM Content',
+          'oid': 'Salesforce Org ID',
+          'recordType': 'Record Type',
+          'Vertical_DH__c': 'Vertical',
+          'lead_source': 'Lead Source',
+          'Entity__c': 'Entity',
+          'debug': 'Debug',
+          'debugEmail': 'Debug Email',
+          'interestedIn': 'Interested In',
+          'retURL': 'Return URL',
+          'needs': 'Needs',
+        };
+        const getLabel = (key: string) => fieldLabelMap[key] || key;
+
+        return (
+        <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSelectedInquiry(null)}></div>
-          <div className="bg-white rounded-3xl w-full max-w-lg p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900">Inquiry Details</h3>
-                <p className="text-sm text-gray-500 mt-1">Submitted on {selectedInquiry.createdAt ? new Date(selectedInquiry.createdAt).toLocaleString() : 'N/A'}</p>
+          <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-2xl p-5 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 max-h-[92vh] overflow-y-auto my-4">
+            <div className="flex justify-between items-start mb-5 sm:mb-6">
+              <div className="min-w-0 flex-1 mr-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">Inquiry Details</h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Submitted on {selectedInquiry.createdAt ? new Date(selectedInquiry.createdAt).toLocaleString() : 'N/A'}</p>
               </div>
               <button 
                 onClick={() => setSelectedInquiry(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none p-1"
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none p-1 flex-shrink-0"
               >
                 &times;
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Primary Fields */}
-              <div className="bg-gray-50 rounded-2xl p-5 space-y-4">
-                <div>
+              <div className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4">
+                <div className="min-w-0">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Name</label>
-                  <p className="text-base font-bold text-gray-900">{selectedInquiry.name || '-'}</p>
+                  <p className="text-base font-bold text-gray-900 break-words">{selectedInquiry.name || '-'}</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="min-w-0">
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email</label>
-                    <a href={`mailto:${selectedInquiry.email}`} className="text-sm font-bold text-mahindra-red hover:underline break-all">{selectedInquiry.email || '-'}</a>
+                    <a href={`mailto:${selectedInquiry.email}`} className="text-sm font-bold text-mahindra-red hover:underline break-all block">{selectedInquiry.email || '-'}</a>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</label>
-                    <a href={`tel:${selectedInquiry.phone}`} className="text-sm font-bold text-gray-900 hover:underline">{selectedInquiry.phone || '-'}</a>
+                    <a href={`tel:${selectedInquiry.phone}`} className="text-sm font-bold text-gray-900 hover:underline break-all block">{selectedInquiry.phone || '-'}</a>
                   </div>
                 </div>
               </div>
 
               {/* Source Page info */}
-              <div className="border border-gray-100 rounded-2xl p-5 space-y-3">
+              <div className="border border-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-5 space-y-3">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Source Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
+                  <div className="min-w-0">
                     <span className="text-gray-500 block text-xs">Landing Page</span>
-                    <span className="font-semibold text-gray-800">{selectedInquiry.sourcePageName || '-'}</span>
+                    <span className="font-semibold text-gray-800 break-words">{selectedInquiry.sourcePageName || '-'}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-gray-500 block text-xs">URL Slug</span>
-                    <span className="font-semibold text-gray-800">/{selectedInquiry.sourcePageSlug || '-'}</span>
+                    <span className="font-semibold text-gray-800 break-all">/{selectedInquiry.sourcePageSlug || '-'}</span>
                   </div>
                 </div>
-                <div className="text-sm pt-2 border-t border-gray-50">
+                <div className="text-sm pt-2 border-t border-gray-50 min-w-0">
                   <span className="text-gray-500 block text-xs">Submission Path</span>
-                  <span className="font-mono text-xs text-gray-600 break-all">{selectedInquiry.sourcePath || '-'}</span>
+                  <span className="font-mono text-xs text-gray-600 break-all block">{selectedInquiry.sourcePath || '-'}</span>
                 </div>
               </div>
 
               {/* Message / Remarks */}
               {(selectedInquiry.message || selectedInquiry.needs) && (
-                <div className="bg-red-50/30 border border-red-100 rounded-2xl p-5">
+                <div className="bg-red-50/30 border border-red-100 rounded-xl sm:rounded-2xl p-4 sm:p-5 min-w-0">
                   <label className="block text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2">Message / Remarks</label>
-                  <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">{selectedInquiry.message || selectedInquiry.needs}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed break-words">{selectedInquiry.message || selectedInquiry.needs}</p>
                 </div>
               )}
 
@@ -1240,15 +1271,15 @@ const AdminDashboard: React.FC = () => {
               {Object.entries(selectedInquiry)
                 .filter(([k]) => !['_id', 'name', 'email', 'phone', 'message', 'needs', 'sourcePageName', 'sourcePageSlug', 'sourcePath', 'createdAt', 'updatedAt', '__v'].includes(k))
                 .length > 0 && (
-                  <div className="bg-gray-50/50 border border-gray-200 rounded-2xl p-5 space-y-4">
+                  <div className="bg-gray-50/50 border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4">
                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Additional Form Data</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {Object.entries(selectedInquiry)
                         .filter(([k]) => !['_id', 'name', 'email', 'phone', 'message', 'needs', 'sourcePageName', 'sourcePageSlug', 'sourcePath', 'createdAt', 'updatedAt', '__v'].includes(k))
                         .map(([key, val]) => (
-                          <div key={key}>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{key}</label>
-                            <p className="text-sm font-semibold text-gray-800">{String(val)}</p>
+                          <div key={key} className="min-w-0">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 break-all">{getLabel(key)}</label>
+                            <p className="text-sm font-semibold text-gray-800 break-words">{String(val)}</p>
                           </div>
                         ))}
                     </div>
@@ -1256,18 +1287,19 @@ const AdminDashboard: React.FC = () => {
               )}
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-6 sm:mt-8 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedInquiry(null)}
-                className="px-6 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all"
+                className="px-5 sm:px-6 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all text-sm sm:text-base"
               >
                 Close
               </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

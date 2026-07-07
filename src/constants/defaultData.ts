@@ -12,15 +12,15 @@ export const defaultSections: Record<SectionType, any> = {
     backgroundImage: '/assets/images/Main_Banner_1920x1080.JPG',
     formTitle: 'Request a Call Back',
     formFields: [
-      { name: 'first_name', label: 'First Name *', placeholder: 'Enter first name', type: 'text' },
-      { name: 'last_name', label: 'Last Name *', placeholder: 'Enter last name', type: 'text' },
-      { name: 'email', label: 'Email *', placeholder: 'Enter your email', type: 'email' },
-      { name: 'company', label: 'Company *', placeholder: 'Enter company', type: 'text' },
-      { name: 'city', label: 'City', placeholder: 'Enter city', type: 'text', required: false },
-      { name: 'zip', label: 'Pin Code', placeholder: 'Enter pin code', type: 'text', required: false },
-      { name: 'mobile', label: 'Mobile *', placeholder: 'Enter mobile', type: 'text' },
-      { name: '00N4x00000bbbE3', label: 'Interested In *', placeholder: '--None--', type: 'select', options: ['Surface Express'] },
-      { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'textarea', maxLength: 255 }
+      { name: 'first_name', label: 'First Name *', placeholder: 'Enter first name...', type: 'text', required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text', salesforceFieldId: 'first_name' },
+      { name: 'last_name', label: 'Last Name *', placeholder: 'Enter last name...', type: 'text', required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text', salesforceFieldId: 'last_name' },
+      { name: 'email', label: 'Email *', placeholder: 'Enter email address...', type: 'email', required: true, inputMode: 'email', salesforceFieldId: 'email' },
+      { name: 'mobile', label: 'Mobile *', placeholder: 'Enter 10-digit mobile...', type: 'text', required: true, maxLength: 10, pattern: '[0-9]*', prefix: '+91', inputMode: 'numeric', salesforceFieldId: 'mobile' },
+      { name: 'company', label: 'Company *', placeholder: 'Enter company name...', type: 'text', required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text', salesforceFieldId: 'company' },
+      { name: 'city', label: 'City *', placeholder: 'Enter city...', type: 'text', required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text', salesforceFieldId: 'city' },
+      { name: 'zip', label: 'Pin Code *', placeholder: 'Enter pin code...', type: 'text', required: true, maxLength: 20, pattern: '[0-9]*', inputMode: 'numeric', salesforceFieldId: 'zip' },
+      { name: '00N4x00000bbbE3', label: 'Interested In *', placeholder: 'Select Option', type: 'select', required: true, options: ['Surface Express'], salesforceFieldId: '00N4x00000bbbE3' },
+      { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'text', required: true, maxLength: 255, salesforceFieldId: '00N4x00000bbbEM' }
     ]
   },
   'thank-you': {

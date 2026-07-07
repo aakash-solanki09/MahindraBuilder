@@ -5,23 +5,26 @@ const backendBaseUrl = API_URL.replace(/\/api\/?$/, '');
 export const resolveMediaUrl = (url?: string): string => {
   if (!url) return '';
 
-  const safeUrl = encodeURI(url.trim());
+  const trimmed = url.trim();
 
+  // Absolute URLs (http, https, //) and data/blob URIs — return as-is
   if (
-    /^(https?:)?\/\//i.test(safeUrl) ||
-    safeUrl.startsWith('data:') ||
-    safeUrl.startsWith('blob:')
+    /^(https?:)?\/\//i.test(trimmed) ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
   ) {
-    return safeUrl;
+    return trimmed;
   }
 
-  if (safeUrl.startsWith('/uploads/')) {
-    return `${backendBaseUrl}${safeUrl}`;
+  // Upload paths — resolve to backend
+  if (trimmed.startsWith('/uploads/')) {
+    return `${backendBaseUrl}${trimmed}`;
   }
 
-  if (safeUrl.startsWith('uploads/')) {
-    return `${backendBaseUrl}/${safeUrl}`;
+  if (trimmed.startsWith('uploads/')) {
+    return `${backendBaseUrl}/${trimmed}`;
   }
 
-  return safeUrl;
+  // Relative paths — return as-is (encodeURI removed to avoid corrupting URLs)
+  return trimmed;
 };
