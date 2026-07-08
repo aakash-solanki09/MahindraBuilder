@@ -151,7 +151,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
             {Object.keys(selectedSection.content)
               .concat(
                 selectedSection?.type === 'hero' 
-                  ? ['formTitle', 'formFields'].filter(k => !Object.keys(selectedSection.content).includes(k)) 
+                  ? ['formTitle', 'formFields', 'salesforce'].filter(k => !Object.keys(selectedSection.content).includes(k)) 
                   : selectedSection?.type === 'navbar'
                     ? ['logoImage', 'links'].filter(k => !Object.keys(selectedSection.content).includes(k))
                     : selectedSection?.type === 'case-studies'
@@ -172,7 +172,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                   return null;
                 }
 
-                const value = selectedSection.content[key] || (key === 'formFields' ? [] : (key === 'formTitle' ? 'Get a Free Quote' : ''));
+                const value = selectedSection.content[key] || (key === 'formFields' ? [] : (key === 'formTitle' ? 'Get a Free Quote' : (key === 'salesforce' ? {} : '')));
                 const isList = Array.isArray(value);
                 const isLockedHeroFormFields = selectedSection?.type === 'hero' && key === 'formFields';
 
@@ -193,7 +193,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                           <label className="text-[8px] font-black text-gray-400 uppercase">Connection URL</label>
                           <input
                             type="text"
-                            value={sfVal.url || ''}
+                            value={sfVal.url || 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8'}
                             onChange={(e) => {
                               updateSectionContent(selectedSection.id, {
                                 salesforce: { ...sfVal, url: e.target.value }
@@ -208,7 +208,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                           <label className="text-[8px] font-black text-gray-400 uppercase">Org ID (oid)</label>
                           <input
                             type="text"
-                            value={sfVal.orgId || ''}
+                            value={sfVal.orgId || '00D4x000007sh6p'}
                             onChange={(e) => {
                               updateSectionContent(selectedSection.id, {
                                 salesforce: { ...sfVal, orgId: e.target.value }
@@ -223,7 +223,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                           <label className="text-[8px] font-black text-gray-400 uppercase">Record Type ID</label>
                           <input
                             type="text"
-                            value={sfVal.recordType || ''}
+                            value={sfVal.recordType || '012Vt0000023hFO'}
                             onChange={(e) => {
                               updateSectionContent(selectedSection.id, {
                                 salesforce: { ...sfVal, recordType: e.target.value }

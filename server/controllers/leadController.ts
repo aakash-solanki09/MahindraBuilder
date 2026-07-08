@@ -43,7 +43,11 @@ export const createLead = async (req: Request, res: Response) => {
       const baseSfUrl = sfConfig.url || process.env.SALESFORCE_URL || 'https://test.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8';
       const sfOrgId = sfConfig.orgId || process.env.SALESFORCE_ORG_ID || req.body.oid || '00D7g0000008mjW';
       
-      const sfUrl = baseSfUrl.includes('orgId=') ? baseSfUrl : `${baseSfUrl}&orgId=${sfOrgId}`;
+      let sfUrl = baseSfUrl;
+      if (!sfUrl.includes('orgId=') && !sfUrl.includes('oid=')) {
+        const separator = sfUrl.includes('?') ? '&' : '?';
+        sfUrl = `${sfUrl}${separator}orgId=${sfOrgId}`;
+      }
 
       const params = new URLSearchParams();
       params.append('oid', sfOrgId);
@@ -103,6 +107,20 @@ export const createLead = async (req: Request, res: Response) => {
         params.append('00N4x00000bbbE3', req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express');
         params.append('00N4x00000bbbEM', remarks);
         params.append('Vertical_DH__c', process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c || 'Not specified');
+        params.append('Entity__c', process.env.SALESFORCE_ENTITY || req.body.Entity__c || 'MESPL');
+      }
+
+      // Always guarantee critical custom fields are populated with defaults if they weren't mapped dynamically
+      if (!params.has('00N4x00000bbbE3')) {
+        params.append('00N4x00000bbbE3', req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express');
+      }
+      if (!params.has('00N4x00000bbbEM') && remarks) {
+        params.append('00N4x00000bbbEM', remarks);
+      }
+      if (!params.has('Vertical_DH__c')) {
+        params.append('Vertical_DH__c', process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c || 'Not specified');
+      }
+      if (!params.has('Entity__c')) {
         params.append('Entity__c', process.env.SALESFORCE_ENTITY || req.body.Entity__c || 'MESPL');
       }
 

@@ -17,87 +17,65 @@ export interface ParsedFormField {
 }
 
 export function parseHtmlForm(html: string): ParsedFormField[] {
+  const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, '');
   const fields: ParsedFormField[] = [];
 
-  // Extract all form-related elements
-  // Match <input ...>, <select>...</select>, <textarea>...</textarea>
-  const elementRegex = /<(input|select|textarea)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/\1>)/gi;
+  // Match inputs
+  const inputRegex = /<input\b[^>]*>/gi;
   let match;
-
-  while ((match = elementRegex.exec(html)) !== null) {
-    const tagName = match[1].toLowerCase();
-    const attrsStr = match[2];
-    const innerContent = match[3] || '';
-
-    // Parse attributes
-    const attrs = parseAttributes(attrsStr);
-
-    // Skip submit/button/hidden types
+  while ((match = inputRegex.exec(cleanHtml)) !== null) {
+    const attrs = parseAttributes(match[0]);
     const type = (attrs.type || 'text').toLowerCase();
-    if (tagName === 'input' && ['submit', 'button', 'reset', 'image', 'hidden'].includes(type)) {
-      // Allow hidden only if it has a name we want to track
-      if (type === 'hidden' && !attrs.name) continue;
+    
+    // Skip submit/button/reset/image/hidden
+    if (['submit', 'button', 'reset', 'image', 'hidden'].includes(type)) {
+      continue;
     }
 
     const name = attrs.name || attrs.id || '';
-    if (!name) continue; // Skip elements without name/id
+    if (!name) continue;
 
-    // Try to find associated label
-    let label = attrs['aria-label'] || attrs.placeholder || attrs.title || '';
-    if (!label) {
-      // Look for <label for="fieldName"> text
-      const labelRegex = new RegExp(`<label\\b[^>]*\\bfor=["']${escapeRegex(name)}["'][^>]*>([\\s\\S]*?)<\\/label>`, 'i');
-      const labelMatch = html.match(labelRegex);
-      if (labelMatch) {
-        label = labelMatch[1].replace(/<[^>]*>/g, '').trim();
+    const label = findLabel(cleanHtml, name, attrs);
+    fields.push(createField(name, label, type, attrs));
+  }
+
+  // Match select
+  const selectRegex = /<select\b([^>]*?)>([\s\S]*?)<\/select>/gi;
+  while ((match = selectRegex.exec(cleanHtml)) !== null) {
+    const attrs = parseAttributes(match[1]);
+    const innerContent = match[2];
+    const name = attrs.name || attrs.id || '';
+    if (!name) continue;
+
+    const label = findLabel(cleanHtml, name, attrs);
+    const field = createField(name, label, 'select', attrs);
+
+    // Extract options
+    const optionRegex = /<option\b[^>]*value=["']([^"']*)["'][^>]*>([\s\S]*?)<\/option>/gi;
+    const options: string[] = [];
+    let optMatch;
+    while ((optMatch = optionRegex.exec(innerContent)) !== null) {
+      const optValue = optMatch[1];
+      if (optValue && optValue !== '') {
+        options.push(optValue);
       }
     }
-    if (!label) {
-      label = name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-    }
-
-    // Determine field type
-    let fieldType: FormField['type'] = 'text';
-    if (tagName === 'select') {
-      fieldType = 'select';
-    } else if (tagName === 'textarea') {
-      fieldType = 'textarea';
-    } else if (type === 'email') {
-      fieldType = 'email';
-    } else if (type === 'tel' || type === 'phone') {
-      fieldType = 'tel';
-    } else if (type === 'number') {
-      fieldType = 'number';
-    }
-
-    const field: ParsedFormField = {
-      name,
-      label,
-      type: fieldType,
-      placeholder: attrs.placeholder || '',
-      required: attrs.required !== undefined || attrs['aria-required'] === 'true',
-      maxLength: attrs.maxlength ? parseInt(attrs.maxlength) : undefined,
-      pattern: attrs.pattern || undefined,
-      salesforceFieldId: name, // Default: use name as Salesforce field ID
-    };
-
-    // Extract select options
-    if (tagName === 'select') {
-      const optionRegex = /<option\b[^>]*value=["']([^"']*)["'][^>]*>([\s\S]*?)<\/option>/gi;
-      const options: string[] = [];
-      let optMatch;
-      while ((optMatch = optionRegex.exec(innerContent)) !== null) {
-        const optValue = optMatch[1];
-        if (optValue && optValue !== '') {
-          options.push(optValue);
-        }
-      }
-      if (options.length > 0) {
-        field.options = options;
-      }
+    if (options.length > 0) {
+      field.options = options;
     }
 
     fields.push(field);
+  }
+
+  // Match textarea
+  const textareaRegex = /<textarea\b([^>]*?)>([\s\S]*?)<\/textarea>/gi;
+  while ((match = textareaRegex.exec(cleanHtml)) !== null) {
+    const attrs = parseAttributes(match[1]);
+    const name = attrs.name || attrs.id || '';
+    if (!name) continue;
+
+    const label = findLabel(cleanHtml, name, attrs);
+    fields.push(createField(name, label, 'textarea', attrs));
   }
 
   return fields;
@@ -112,25 +90,72 @@ export interface ParsedFormMeta {
 }
 
 export function parseFormMeta(html: string): ParsedFormMeta {
+  const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, '');
   const meta: ParsedFormMeta = { hiddenFields: {} };
 
-  // Extract form action
-  const actionMatch = html.match(/<form\b[^>]*\baction=["']([^"']*)["']/i);
-  if (actionMatch) {
-    meta.action = actionMatch[1];
+  // Extract form attributes
+  const formRegex = /<form\b([^>]*?)>/i;
+  const formMatch = cleanHtml.match(formRegex);
+  if (formMatch) {
+    const formAttrs = parseAttributes(formMatch[1]);
+    if (formAttrs.action) {
+      meta.action = formAttrs.action;
+    }
   }
 
   // Extract hidden input values
-  const hiddenRegex = /<input\b[^>]*\btype=["']hidden["'][^>]*>/gi;
+  const inputRegex = /<input\b[^>]*>/gi;
   let match;
-  while ((match = hiddenRegex.exec(html)) !== null) {
+  while ((match = inputRegex.exec(cleanHtml)) !== null) {
     const attrs = parseAttributes(match[0]);
-    if (attrs.name && attrs.value !== undefined) {
+    if (attrs.type === 'hidden' && attrs.name && attrs.value !== undefined) {
       meta.hiddenFields[attrs.name] = attrs.value;
     }
   }
 
   return meta;
+}
+
+function findLabel(html: string, name: string, attrs: Record<string, any>): string {
+  let label = attrs['aria-label'] || attrs.placeholder || attrs.title || '';
+  if (!label) {
+    // Look for <label for="fieldName"> text
+    const labelRegex = new RegExp(`<label\\b[^>]*\\bfor=["']${escapeRegex(name)}["'][^>]*>([\\s\\S]*?)<\\/label>`, 'i');
+    const labelMatch = html.match(labelRegex);
+    if (labelMatch) {
+      label = labelMatch[1].replace(/<[^>]*>/g, '').trim();
+    }
+  }
+  if (!label) {
+    label = name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+  }
+  return label;
+}
+
+function createField(name: string, label: string, type: string, attrs: Record<string, any>): ParsedFormField {
+  let fieldType: FormField['type'] = 'text';
+  if (type === 'select') {
+    fieldType = 'select';
+  } else if (type === 'textarea') {
+    fieldType = 'textarea';
+  } else if (type === 'email') {
+    fieldType = 'email';
+  } else if (type === 'tel' || type === 'phone') {
+    fieldType = 'tel';
+  } else if (type === 'number') {
+    fieldType = 'number';
+  }
+
+  return {
+    name,
+    label,
+    type: fieldType,
+    placeholder: attrs.placeholder || '',
+    required: attrs.required !== undefined || attrs['aria-required'] === 'true',
+    maxLength: attrs.maxlength ? parseInt(attrs.maxlength) : undefined,
+    pattern: attrs.pattern || undefined,
+    salesforceFieldId: name,
+  };
 }
 
 function parseAttributes(attrString: string): Record<string, any> {
