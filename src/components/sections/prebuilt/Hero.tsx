@@ -422,7 +422,7 @@ const Hero: React.FC<HeroProps> = ({
           <div
             className={cn(
               'grid items-center',
-              isDesktopView ? 'grid-cols-1 xl:grid-cols-[1.2fr,480px] gap-8 xl:gap-12' : 'grid-cols-1 gap-8'
+              isDesktopView ? 'grid-cols-1 lg:grid-cols-[1.2fr,480px] gap-8 lg:gap-12' : 'grid-cols-1 gap-8'
             )}
           >
             {/* Left Content */}
@@ -431,7 +431,7 @@ const Hero: React.FC<HeroProps> = ({
                 'text-white flex flex-col items-start text-left',
                 'space-y-5 -translate-y-[110px] translate-x-9',
                 'lg:-translate-y-24 lg:translate-x-0',
-                'xl:pl-0 xl:-translate-y-28',
+                'lg:pl-0 lg:-translate-y-28',
                 '2xl:-translate-y-36',
                 isDesktopView ? 'pl-4 lg:pl-6' : ''
               )}
@@ -440,7 +440,7 @@ const Hero: React.FC<HeroProps> = ({
                 <h1
                   className={cn(
                     'font-bold tracking-tight max-w-[680px]',
-                    isDesktopView ? 'text-[28px] lg:text-[38px] xl:text-[58px] 2xl:text-[64px] leading-[1.05]' : 'text-[32px] leading-[1.1]'
+                    isDesktopView ? 'text-[28px] lg:text-[38px] lg:text-[58px] 2xl:text-[64px] leading-[1.05]' : 'text-[32px] leading-[1.1]'
                   )}
                 >
                   {renderTitle()}
@@ -451,7 +451,7 @@ const Hero: React.FC<HeroProps> = ({
                 <p
                   className={cn(
                     'font-normal text-left leading-relaxed',
-                    isDesktopView ? 'text-[15px] xl:text-[20px] lg:max-w-[560px]' : 'text-[14px] max-w-[320px]',
+                    isDesktopView ? 'text-[15px] lg:text-[20px] lg:max-w-[560px]' : 'text-[14px] max-w-[320px]',
                     !(content as any).subtitleColor && 'text-white/90'
                   )}
                   style={{
@@ -473,7 +473,7 @@ const Hero: React.FC<HeroProps> = ({
                 isCompactDesktop ? 'max-w-[560px]' : 'max-w-[600px]',
                 isCenteredView
                   ? 'hidden'
-                  : 'hidden xl:block'
+                  : 'hidden lg:block'
               )}
             >
               <div
@@ -520,7 +520,7 @@ const Hero: React.FC<HeroProps> = ({
       {/* Mobile / Tablet Form */}
       <section
         className={cn(
-          'bg-[#F3F8FF] w-full py-12 px-6 xl:hidden'
+          'bg-[#F3F8FF] w-full py-12 px-6 lg:hidden'
         )}
       >
         <div className="max-w-[600px] mx-auto bg-[#F3F8FF] rounded-[30px]">
@@ -665,8 +665,8 @@ const Form = ({
     onSubmit={handleSubmit}
   >
     <div className={cn(
-      "grid gap-x-4",
-      isCenteredView ? "grid-cols-1 gap-y-4" : "grid-cols-1 sm:grid-cols-2 gap-y-2.5"
+      "grid gap-x-4 grid-cols-1 gap-y-4",
+      !isCenteredView && "lg:grid-cols-2 lg:gap-y-2.5"
     )}>
       {fields.map((field: any, idx: number) => {
         const isFullWidth = field.name === '00N4x00000bbbEM' || field.type === 'textarea';
@@ -675,7 +675,7 @@ const Form = ({
             key={idx}
             className={cn(
               "space-y-1.5 text-left relative",
-              isFullWidth && "col-span-2"
+              isFullWidth && "lg:col-span-2"
             )}
           >
             <label
