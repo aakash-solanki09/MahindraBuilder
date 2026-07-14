@@ -9,6 +9,7 @@ import {
   Trash2, 
   Globe, 
   FileText,
+  File,
   Clock,
   Layout,
   LogOut,
@@ -21,7 +22,8 @@ import {
   Inbox,
   BarChart3,
   Settings,
-  Download
+  Download,
+  X
 } from 'lucide-react';
 import api from '../lib/api';
 import type { PageData } from '../types';
@@ -76,6 +78,16 @@ const AdminDashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedInquiry, setSelectedInquiry] = useState<LeadItem | null>(null);
+
+  // Date filtering state
+  const [dateFilterType, setDateFilterType] = useState<'all' | 'single' | 'range'>('all');
+  const [dateFilterSingle, setDateFilterSingle] = useState('');
+  const [dateFilterStart, setDateFilterStart] = useState('');
+  const [dateFilterEnd, setDateFilterEnd] = useState('');
+
+  // Export Modal state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportScope, setExportScope] = useState<'full' | 'filtered' | 'page'>('filtered');
 
   // Settings & Profile state
   const [settingsData, setSettingsData] = useState({
@@ -136,7 +148,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [leadPageFilter, leadSearchQuery, rowsPerPage]);
+  }, [leadPageFilter, leadSearchQuery, rowsPerPage, dateFilterType, dateFilterSingle, dateFilterStart, dateFilterEnd]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -182,9 +194,30 @@ const AdminDashboard: React.FC = () => {
         }
       }
 
+      // 3. Date filtering
+      if (lead.createdAt) {
+        const leadTime = new Date(lead.createdAt).getTime();
+        if (dateFilterType === 'single' && dateFilterSingle) {
+          const leadDateStr = new Date(lead.createdAt).toDateString();
+          const filterDateStr = new Date(dateFilterSingle + 'T00:00:00').toDateString();
+          if (leadDateStr !== filterDateStr) return false;
+        } else if (dateFilterType === 'range') {
+          if (dateFilterStart) {
+            const startTime = new Date(dateFilterStart + 'T00:00:00').getTime();
+            if (leadTime < startTime) return false;
+          }
+          if (dateFilterEnd) {
+            const endTime = new Date(dateFilterEnd + 'T23:59:59').getTime();
+            if (leadTime > endTime) return false;
+          }
+        }
+      } else if (dateFilterType !== 'all') {
+        return false;
+      }
+
       return true;
     });
-  }, [leads, leadPageFilter, leadSearchQuery]);
+  }, [leads, leadPageFilter, leadSearchQuery, dateFilterType, dateFilterSingle, dateFilterStart, dateFilterEnd]);
 
   // Count of unattributed leads
   const unattributedCount = useMemo(() => {
@@ -270,12 +303,23 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Message/Remarks', 'Source Page', 'Slug', 'Submitted At'];
-    const rows = filteredLeads.map(lead => [
+  const getTargetLeads = (scope: 'full' | 'filtered' | 'page') => {
+    if (scope === 'full') return leads;
+    if (scope === 'page') return paginatedLeads;
+    return filteredLeads;
+  };
+
+  const exportToCSV = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
+    const targetLeads = getTargetLeads(scope);
+    const headers = ['Name', 'Email', 'Phone', 'Company', 'City', 'Pin Code', 'Interested In', 'Message/Remarks', 'Source Page', 'Slug', 'Submitted At'];
+    const rows = targetLeads.map(lead => [
       lead.name || '',
       lead.email || '',
       lead.phone || '',
+      lead.company || '',
+      lead.city || '',
+      lead.zip || lead.pincode || '',
+      lead.interestedIn || lead['00N4x00000bbbE3'] || '',
       (lead.message || lead.needs || '').replace(/"/g, '""'),
       lead.sourcePageName || lead.sourcePageSlug || 'preview',
       lead.sourcePageSlug || 'preview',
@@ -291,13 +335,14 @@ const AdminDashboard: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `enquiries_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `enquiries_${scope}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const exportToDoc = () => {
+  const exportToDoc = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
+    const targetLeads = getTargetLeads(scope);
     const docContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -319,24 +364,32 @@ const AdminDashboard: React.FC = () => {
       </head>
       <body>
         <h2>User Enquiries Report - Mahindra Logistics</h2>
-        <p>Generated on: ${new Date().toLocaleString()}</p>
+        <p>Generated on: ${new Date().toLocaleString()} | Scope: ${scope} | Total: ${targetLeads.length}</p>
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Company</th>
+              <th>City</th>
+              <th>Pin Code</th>
+              <th>Interested In</th>
               <th>Message/Remarks</th>
               <th>Source Page</th>
               <th>Submitted At</th>
             </tr>
           </thead>
           <tbody>
-            ${filteredLeads.map(lead => `
+            ${targetLeads.map(lead => `
               <tr>
                 <td>${lead.name || '-'}</td>
                 <td>${lead.email || '-'}</td>
                 <td>${lead.phone || '-'}</td>
+                <td>${lead.company || '-'}</td>
+                <td>${lead.city || '-'}</td>
+                <td>${lead.zip || lead.pincode || '-'}</td>
+                <td>${lead.interestedIn || lead['00N4x00000bbbE3'] || '-'}</td>
                 <td>${lead.message || lead.needs || '-'}</td>
                 <td>${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})</td>
                 <td>${lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
@@ -352,13 +405,14 @@ const AdminDashboard: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `enquiries_${new Date().toISOString().slice(0, 10)}.doc`);
+    link.setAttribute('download', `enquiries_${scope}_${new Date().toISOString().slice(0, 10)}.doc`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
+    const targetLeads = getTargetLeads(scope);
     const doc = new jsPDF('l', 'mm', 'a4');
     
     doc.setFont('Helvetica', 'bold');
@@ -367,14 +421,18 @@ const AdminDashboard: React.FC = () => {
     
     doc.setFont('Helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleString()} | Total Enquiries: ${filteredLeads.length}`, 14, 22);
+    doc.text(`Generated on: ${new Date().toLocaleString()} | Scope: ${scope} | Total Enquiries: ${targetLeads.length}`, 14, 22);
 
-    const tableHeaders = [['Name', 'Email', 'Phone', 'Message / Remarks', 'Source Page', 'Submitted At']];
+    const tableHeaders = [['Name', 'Email', 'Phone', 'Company', 'City', 'Pin Code', 'Interested In', 'Message / Remarks', 'Source Page', 'Submitted At']];
     
-    const tableRows = filteredLeads.map(lead => [
+    const tableRows = targetLeads.map(lead => [
       lead.name || '-',
       lead.email || '-',
       lead.phone || '-',
+      lead.company || '-',
+      lead.city || '-',
+      lead.zip || lead.pincode || '-',
+      lead.interestedIn || lead['00N4x00000bbbE3'] || '-',
       lead.message || lead.needs || '-',
       `${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})`,
       lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'
@@ -386,13 +444,13 @@ const AdminDashboard: React.FC = () => {
       startY: 28,
       theme: 'grid',
       headStyles: { fillColor: [237, 28, 36], textColor: [255, 255, 255] },
-      styles: { fontSize: 8, cellPadding: 3 },
+      styles: { fontSize: 7, cellPadding: 2 },
       columnStyles: {
-        3: { cellWidth: 70 },
+        7: { cellWidth: 40 }, // Message / Remarks
       }
     });
 
-    doc.save(`enquiries_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`enquiries_${scope}_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   const handleCreatePage = async (e: React.FormEvent) => {
@@ -710,6 +768,72 @@ const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
 
+                  {/* Date Filter Type Dropdown */}
+                  <div className="relative flex-1 min-w-[130px] sm:flex-initial">
+                    <select
+                      value={dateFilterType}
+                      onChange={(e) => {
+                        setDateFilterType(e.target.value as any);
+                        setDateFilterSingle('');
+                        setDateFilterStart('');
+                        setDateFilterEnd('');
+                      }}
+                      className="block w-full py-2 pl-3 pr-8 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all cursor-pointer"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="single">Single Date</option>
+                      <option value="range">Date Range</option>
+                    </select>
+                  </div>
+
+                  {/* Single Date Picker */}
+                  {dateFilterType === 'single' && (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-[150px] sm:flex-initial">
+                      <input
+                        type="date"
+                        value={dateFilterSingle}
+                        onChange={(e) => setDateFilterSingle(e.target.value)}
+                        className="block w-full py-1.5 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Date Range Pickers */}
+                  {dateFilterType === 'range' && (
+                    <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[300px] sm:flex-initial">
+                      <input
+                        type="date"
+                        value={dateFilterStart}
+                        placeholder="Start Date"
+                        onChange={(e) => setDateFilterStart(e.target.value)}
+                        className="block py-1.5 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all cursor-pointer flex-1 sm:flex-initial"
+                      />
+                      <span className="text-gray-400 text-xs">to</span>
+                      <input
+                        type="date"
+                        value={dateFilterEnd}
+                        placeholder="End Date"
+                        onChange={(e) => setDateFilterEnd(e.target.value)}
+                        className="block py-1.5 px-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mahindra-red focus:bg-white outline-none transition-all cursor-pointer flex-1 sm:flex-initial"
+                      />
+                    </div>
+                  )}
+
+                  {/* Date Reset Button */}
+                  {dateFilterType !== 'all' && (
+                    <button
+                      onClick={() => {
+                        setDateFilterType('all');
+                        setDateFilterSingle('');
+                        setDateFilterStart('');
+                        setDateFilterEnd('');
+                      }}
+                      className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-mahindra-red bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
+                    >
+                      Clear Date
+                    </button>
+                  )}
+
                   {/* Rows Per Page */}
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Rows:</span>
@@ -726,43 +850,15 @@ const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Export Dropdown */}
-                  <div className="relative">
+                  {/* Export Button -> Opens Modal */}
+                  <div>
                     <button
-                      onClick={() => setShowExportDropdown(!showExportDropdown)}
+                      onClick={() => setIsExportModalOpen(true)}
                       className="flex items-center gap-2 bg-mahindra-blue hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap"
                     >
                       <Download className="w-4 h-4" />
                       <span>Export Enquiries</span>
                     </button>
-                    {showExportDropdown && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-20" 
-                          onClick={() => setShowExportDropdown(false)}
-                        ></div>
-                        <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-30 py-1 font-semibold text-gray-700 animate-in fade-in slide-in-from-top-1 duration-150">
-                          <button
-                            onClick={() => { exportToCSV(); setShowExportDropdown(false); }}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
-                          >
-                            <span>Export as CSV (.csv)</span>
-                          </button>
-                          <button
-                            onClick={() => { exportToPDF(); setShowExportDropdown(false); }}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
-                          >
-                            <span>Export as PDF (.pdf)</span>
-                          </button>
-                          <button
-                            onClick={() => { exportToDoc(); setShowExportDropdown(false); }}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-gray-50 hover:text-mahindra-red transition-all whitespace-nowrap"
-                          >
-                            <span>Export as Word (.doc)</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1300,6 +1396,115 @@ const AdminDashboard: React.FC = () => {
         </div>
         );
       })()}
+
+      {/* Export Configuration Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setIsExportModalOpen(false)}></div>
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={() => setIsExportModalOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-700 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Export Configuration</h3>
+            <p className="text-sm text-gray-500 mb-6">Select the export scope and download format for enquiries.</p>
+
+            {/* Export Scope Radio Buttons */}
+            <div className="space-y-4 mb-8">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Export Scope</label>
+              
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3.5 border border-gray-200 rounded-2xl hover:bg-gray-50 cursor-pointer transition-all">
+                  <input
+                    type="radio"
+                    name="exportScope"
+                    value="full"
+                    checked={exportScope === 'full'}
+                    onChange={() => setExportScope('full')}
+                    className="mt-1 text-mahindra-red focus:ring-mahindra-red"
+                  />
+                  <div>
+                    <span className="block text-sm font-bold text-gray-900">Full Database ({leads.length} Leads)</span>
+                    <span className="block text-xs text-gray-500">Export every lead record stored in the system (ignores current search & filters).</span>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-3.5 border border-gray-200 rounded-2xl hover:bg-gray-50 cursor-pointer transition-all">
+                  <input
+                    type="radio"
+                    name="exportScope"
+                    value="filtered"
+                    checked={exportScope === 'filtered'}
+                    onChange={() => setExportScope('filtered')}
+                    className="mt-1 text-mahindra-red focus:ring-mahindra-red"
+                  />
+                  <div>
+                    <span className="block text-sm font-bold text-gray-900">Current Filtered ({filteredLeads.length} Leads)</span>
+                    <span className="block text-xs text-gray-500">Export only leads matching active search filters, landing page, and date ranges.</span>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-3.5 border border-gray-200 rounded-2xl hover:bg-gray-50 cursor-pointer transition-all">
+                  <input
+                    type="radio"
+                    name="exportScope"
+                    value="page"
+                    checked={exportScope === 'page'}
+                    onChange={() => setExportScope('page')}
+                    className="mt-1 text-mahindra-red focus:ring-mahindra-red"
+                  />
+                  <div>
+                    <span className="block text-sm font-bold text-gray-900">Current Page Only ({paginatedLeads.length} Leads)</span>
+                    <span className="block text-xs text-gray-500">Export only the leads visible on the current page of the table.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select Export Format</label>
+              <div className="grid grid-cols-1 gap-2.5">
+                <button
+                  onClick={() => {
+                    exportToCSV(exportScope);
+                    setIsExportModalOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#107c41] hover:bg-[#0b5c30] text-white py-3 px-4 rounded-xl text-sm font-bold transition-all shadow-md active:scale-98"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Download Excel/CSV (.csv)</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    exportToPDF(exportScope);
+                    setIsExportModalOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#E31837] hover:bg-red-700 text-white py-3 px-4 rounded-xl text-sm font-bold transition-all shadow-md active:scale-98"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PDF (.pdf)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    exportToDoc(exportScope);
+                    setIsExportModalOpen(false);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#12549a] hover:bg-[#0e4178] text-white py-3 px-4 rounded-xl text-sm font-bold transition-all shadow-md active:scale-98"
+                >
+                  <File className="w-4 h-4" />
+                  <span>Download Word (.doc)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
