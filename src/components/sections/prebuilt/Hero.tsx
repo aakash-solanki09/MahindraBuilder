@@ -300,9 +300,9 @@ const Hero: React.FC<HeroProps> = ({
           ? (page?.slug && page.slug !== 'preview' ? page.slug : 'mahindralogistic') 
           : (slug || page?.slug || 'mahindralogistic');
         navigate(`/${resolvedSlug}/thank-you${location.search || ''}`);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        alert('Error sending inquiry');
+        alert(err?.response?.data?.message || err?.message || 'Error sending inquiry');
       } finally {
         setLoading(false);
       }
