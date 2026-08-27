@@ -147,14 +147,6 @@ const Hero: React.FC<HeroProps> = ({
       ...storedUTM,
       _fieldMap: salesforceFieldMap,   // Dynamic field mapping for server
       _salesforce: sfConfig,           // Per-page Salesforce config
-      oid: sfConfig.orgId || '00D4x000007sh6p',
-      retURL: 'http://google.com',
-      recordType: sfConfig.recordType || '012Vt0000023hFO',
-      Vertical_DH__c: 'Not specified',
-      lead_source: 'Campaign',
-      Entity__c: 'MESPL',
-      debug: sfConfig.debug ?? 0,
-      debugEmail: sfConfig.debugEmail || 'amin.noumita@mahindralogistics.com',
       sourcePageName: resolvedName,
       sourcePageSlug: resolvedSlug,
       sourcePath: location.pathname,

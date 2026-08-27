@@ -25,7 +25,7 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/mahindra-builder
       - CLIENT_URL=https://campaign.mahindralogistics.com,https://campaign.mahindralogistics.com:7001
       - NODE_ENV=development
-      - JWT_SECRET=mahindra_secret_123
+      - JWT_SECRET=mahindra_secure_prod_jwt_2026_xyz
       - SALESFORCE_URL=https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8
       - SALESFORCE_ORG_ID=00D4x000007sh6p
       - SALESFORCE_RECORD_TYPE=012Vt0000023hFO

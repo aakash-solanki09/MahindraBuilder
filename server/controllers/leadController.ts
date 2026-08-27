@@ -16,9 +16,8 @@ export const createLead = async (req: Request, res: Response) => {
 
     const fullName = String(req.body.name || `${req.body.first_name || ''} ${req.body.last_name || ''}`).trim();
 
-    // Compute remarks from known fields
+    // Compute remarks from known fields (No hardcoded SF IDs here)
     const remarks = String(
-      req.body['00N4x00000bbbEM'] ||
       req.body.needs ||
       req.body.remarks ||
       req.body.message ||
@@ -31,7 +30,7 @@ export const createLead = async (req: Request, res: Response) => {
       phone: req.body.phone || req.body.mobile || '',
       needs: req.body.needs || remarks,
       message: req.body.message || remarks,
-      interestedIn: req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express',
+      interestedIn: req.body.interestedIn || req.body.interest || '', // No hardcoded fallback
     };
 
     const lead = new Lead(leadPayload);
@@ -39,10 +38,15 @@ export const createLead = async (req: Request, res: Response) => {
 
     // Salesforce Web-To-Lead integration
     try {
-      // Use page-specific Salesforce config, fallback to env vars
-      const baseSfUrl = sfConfig.url || process.env.SALESFORCE_URL || 'https://test.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8';
-      const sfOrgId = sfConfig.orgId || process.env.SALESFORCE_ORG_ID || req.body.oid || '00D7g0000008mjW';
+      // Use page-specific Salesforce config, fallback strictly to env vars
+      const baseSfUrl = sfConfig.url || process.env.SALESFORCE_URL;
+      const sfOrgId = sfConfig.orgId || process.env.SALESFORCE_ORG_ID || req.body.oid;
       
+      // Strict check as requested: Error out if missing dynamic config
+      if (!baseSfUrl || !sfOrgId) {
+        throw new Error('Missing critical Salesforce Configuration (URL or Org ID). No hardcoded fallback available.');
+      }
+
       let sfUrl = baseSfUrl;
       if (!sfUrl.includes('orgId=') && !sfUrl.includes('oid=')) {
         const separator = sfUrl.includes('?') ? '&' : '?';
@@ -51,11 +55,23 @@ export const createLead = async (req: Request, res: Response) => {
 
       const params = new URLSearchParams();
       params.append('oid', sfOrgId);
-      params.append('retURL', req.body.retURL || 'http://google.com');
-      params.append('recordType', sfConfig.recordType || process.env.SALESFORCE_RECORD_TYPE || req.body.recordType || '012E2000002wUsb');
-      params.append('lead_source', process.env.SALESFORCE_LEAD_SOURCE || req.body.lead_source || 'Campaign');
-      params.append('debug', process.env.SALESFORCE_DEBUG !== undefined ? process.env.SALESFORCE_DEBUG : String(sfConfig.debug ?? req.body.debug ?? 0));
-      params.append('debugEmail', process.env.SALESFORCE_DEBUG_EMAIL || sfConfig.debugEmail || req.body.debugEmail || 'amin.noumita@mahindralogistics.com');
+      
+      // Strict fallbacks - Only append if value exists in dynamic request or .env
+      const retURL = req.body.retURL || process.env.SALESFORCE_RET_URL;
+      if (retURL) params.append('retURL', retURL);
+      
+      const recordType = sfConfig.recordType || process.env.SALESFORCE_RECORD_TYPE || req.body.recordType;
+      if (recordType) params.append('recordType', recordType);
+      
+      const leadSource = process.env.SALESFORCE_LEAD_SOURCE || req.body.lead_source;
+      if (leadSource) params.append('lead_source', leadSource);
+      
+      if (process.env.SALESFORCE_DEBUG !== undefined || sfConfig.debug !== undefined || req.body.debug !== undefined) {
+        params.append('debug', process.env.SALESFORCE_DEBUG !== undefined ? process.env.SALESFORCE_DEBUG : String(sfConfig.debug ?? req.body.debug ?? 0));
+      }
+      
+      const debugEmail = process.env.SALESFORCE_DEBUG_EMAIL || sfConfig.debugEmail || req.body.debugEmail;
+      if (debugEmail) params.append('debugEmail', debugEmail);
 
       // Standard Salesforce fields
       let firstName = req.body.first_name || '';
@@ -86,8 +102,10 @@ export const createLead = async (req: Request, res: Response) => {
             ? cleanMobile
             : '';
 
-      params.append('mobile', mobile);
-      params.append('phone', mobile);
+      if (mobile) {
+        params.append('mobile', mobile);
+        params.append('phone', mobile);
+      }
 
       // 🔥 DYNAMIC: Map custom fields using _fieldMap from Hero
       if (Object.keys(fieldMap).length > 0) {
@@ -103,26 +121,15 @@ export const createLead = async (req: Request, res: Response) => {
           }
         }
       } else {
-        // Fallback: legacy hardcoded mapping
-        params.append('00N4x00000bbbE3', req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express');
-        params.append('00N4x00000bbbEM', remarks);
-        params.append('Vertical_DH__c', process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c || 'Not specified');
-        params.append('Entity__c', process.env.SALESFORCE_ENTITY || req.body.Entity__c || 'MESPL');
+        console.warn('[Salesforce] No dynamic _fieldMap provided. Only standard fields will be sent.');
       }
 
-      // Always guarantee critical custom fields are populated with defaults if they weren't mapped dynamically
-      if (!params.has('00N4x00000bbbE3')) {
-        params.append('00N4x00000bbbE3', req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express');
-      }
-      if (!params.has('00N4x00000bbbEM') && remarks) {
-        params.append('00N4x00000bbbEM', remarks);
-      }
-      if (!params.has('Vertical_DH__c')) {
-        params.append('Vertical_DH__c', process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c || 'Not specified');
-      }
-      if (!params.has('Entity__c')) {
-        params.append('Entity__c', process.env.SALESFORCE_ENTITY || req.body.Entity__c || 'MESPL');
-      }
+      // Dynamic fallback for any additional env vars if they exist
+      const verticalDh = process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c;
+      if (verticalDh && !params.has('Vertical_DH__c')) params.append('Vertical_DH__c', verticalDh);
+      
+      const entity = process.env.SALESFORCE_ENTITY || req.body.Entity__c;
+      if (entity && !params.has('Entity__c')) params.append('Entity__c', entity);
 
       console.log('[Salesforce] Forwarding lead to:', sfUrl);
       const sfRes = await fetch(sfUrl, {
@@ -132,8 +139,10 @@ export const createLead = async (req: Request, res: Response) => {
       });
       const sfResText = await sfRes.text();
       console.log('[Salesforce] Lead forwarded. Status:', sfRes.status, 'Response:', sfResText.slice(0, 500));
-    } catch (sfEx) {
+    } catch (sfEx: any) {
       console.error('[Salesforce] Exception caught during lead preparation:', sfEx);
+      // 🔥 Return 400 Error as requested by user if dynamic config fails
+      return res.status(400).json({ message: sfEx instanceof Error ? sfEx.message : 'Salesforce Integration Error' });
     }
 
     res.status(201).json({ message: 'Lead captured successfully' });

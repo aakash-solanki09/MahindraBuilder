@@ -309,26 +309,106 @@ const AdminDashboard: React.FC = () => {
     return filteredLeads;
   };
 
+  const getDynamicTableData = (targetLeads: any[]) => {
+    if (targetLeads.length === 0) return { headers: [], rows: [] };
+    
+    // Human-readable labels for known field names
+    const fieldLabelMap: Record<string, string> = {
+      'pageId': 'Page ID',
+      'first_name': 'First Name',
+      'last_name': 'Last Name',
+      'mobile': 'Mobile',
+      'company': 'Company',
+      'city': 'City',
+      'zip': 'Pin Code',
+      'pincode': 'Pin Code',
+      '00N4x00000bbbE3': 'Interested In (SF)',
+      '00N4x00000bbbEM': 'Remarks (SF)',
+      'utm_source': 'UTM Source',
+      'utm_medium': 'UTM Medium',
+      'utm_campaign': 'UTM Campaign',
+      'utm_id': 'UTM ID',
+      'utm_term': 'UTM Term',
+      'utm_content': 'UTM Content',
+      'oid': 'Salesforce Org ID',
+      'recordType': 'Record Type',
+      'Vertical_DH__c': 'Vertical',
+      'lead_source': 'Lead Source',
+      'Entity__c': 'Entity',
+      'debug': 'Debug',
+      'debugEmail': 'Debug Email',
+      'interestedIn': 'Interested In',
+      'interest': 'Interest',
+      'retURL': 'Return URL',
+      'needs': 'Needs',
+      'remarks': 'Remarks',
+      'message': 'Message',
+      'sourcePath': 'Submission Path'
+    };
+    const getLabel = (key: string) => fieldLabelMap[key] || key;
+
+    // Base headers that we ALWAYS want first for readability
+    const baseHeaders = ['Name', 'Email', 'Phone', 'Source Page', 'Submitted At'];
+    
+    // Internal keys that are either part of baseHeaders or strictly MongoDB internals
+    const ignoreKeys = ['_id', '__v', 'updatedAt', 'sourcePageSlug', 'sourcePageName', 'createdAt', 'name', 'email', 'phone'];
+
+    // Find all custom keys across all leads
+    const customKeys = new Set<string>();
+    targetLeads.forEach(lead => {
+      Object.keys(lead).forEach(key => {
+        if (!ignoreKeys.includes(key) && typeof lead[key] !== 'object') {
+          customKeys.add(key);
+        }
+      });
+    });
+
+    const dynamicKeysArray = Array.from(customKeys);
+    
+    // Map keys to human readable headers
+    const dynamicHeaders = dynamicKeysArray.map(k => getLabel(k));
+    const allHeaders = [...baseHeaders, ...dynamicHeaders];
+
+    const rows = targetLeads.map(lead => {
+      const baseRow = [
+        lead.name || '-',
+        lead.email || '-',
+        lead.phone || '-',
+        `${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})`,
+        lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'
+      ];
+
+      const dynamicRow = dynamicKeysArray.map(key => {
+         const val = lead[key];
+         return (val === undefined || val === null || val === '') ? '-' : String(val);
+      });
+      return [...baseRow, ...dynamicRow];
+    });
+
+    return { headers: allHeaders, rows };
+  };
+
+  const escapeHtml = (unsafe: string) => {
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  const escapeCsv = (val: string) => {
+    if (val === null || val === undefined) return '""';
+    return `"${String(val).replace(/"/g, '""')}"`;
+  };
+
   const exportToCSV = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
     const targetLeads = getTargetLeads(scope);
-    const headers = ['Name', 'Email', 'Phone', 'Company', 'City', 'Pin Code', 'Interested In', 'Message/Remarks', 'Source Page', 'Slug', 'Submitted At'];
-    const rows = targetLeads.map(lead => [
-      lead.name || '',
-      lead.email || '',
-      lead.phone || '',
-      lead.company || '',
-      lead.city || '',
-      lead.zip || lead.pincode || '',
-      lead.interestedIn || lead['00N4x00000bbbE3'] || '',
-      (lead.message || lead.needs || '').replace(/"/g, '""'),
-      lead.sourcePageName || lead.sourcePageSlug || 'preview',
-      lead.sourcePageSlug || 'preview',
-      lead.createdAt ? new Date(lead.createdAt).toLocaleString() : ''
-    ]);
+    const { headers, rows } = getDynamicTableData(targetLeads);
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map(e => e.map(val => `"${val}"`).join(','))
+      headers.map(h => escapeCsv(h)).join(','),
+      ...rows.map(row => row.map(val => escapeCsv(val)).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -343,6 +423,8 @@ const AdminDashboard: React.FC = () => {
 
   const exportToDoc = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
     const targetLeads = getTargetLeads(scope);
+    const { headers, rows } = getDynamicTableData(targetLeads);
+    
     const docContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -368,31 +450,13 @@ const AdminDashboard: React.FC = () => {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Company</th>
-              <th>City</th>
-              <th>Pin Code</th>
-              <th>Interested In</th>
-              <th>Message/Remarks</th>
-              <th>Source Page</th>
-              <th>Submitted At</th>
+              ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
-            ${targetLeads.map(lead => `
+            ${rows.map(row => `
               <tr>
-                <td>${lead.name || '-'}</td>
-                <td>${lead.email || '-'}</td>
-                <td>${lead.phone || '-'}</td>
-                <td>${lead.company || '-'}</td>
-                <td>${lead.city || '-'}</td>
-                <td>${lead.zip || lead.pincode || '-'}</td>
-                <td>${lead.interestedIn || lead['00N4x00000bbbE3'] || '-'}</td>
-                <td>${lead.message || lead.needs || '-'}</td>
-                <td>${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})</td>
-                <td>${lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'}</td>
+                ${row.map(val => `<td>${escapeHtml(val)}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -413,7 +477,16 @@ const AdminDashboard: React.FC = () => {
 
   const exportToPDF = (scope: 'full' | 'filtered' | 'page' = 'filtered') => {
     const targetLeads = getTargetLeads(scope);
-    const doc = new jsPDF('l', 'mm', 'a4');
+    const { headers, rows } = getDynamicTableData(targetLeads);
+    
+    // Dynamically choose page size based on number of columns to prevent text squishing
+    let format = 'a4';
+    if (headers.length > 25) format = 'a0';
+    else if (headers.length > 15) format = 'a1';
+    else if (headers.length > 10) format = 'a2';
+    else if (headers.length > 7) format = 'a3';
+
+    const doc = new jsPDF('l', 'mm', format);
     
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(16);
@@ -423,31 +496,13 @@ const AdminDashboard: React.FC = () => {
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()} | Scope: ${scope} | Total Enquiries: ${targetLeads.length}`, 14, 22);
 
-    const tableHeaders = [['Name', 'Email', 'Phone', 'Company', 'City', 'Pin Code', 'Interested In', 'Message / Remarks', 'Source Page', 'Submitted At']];
-    
-    const tableRows = targetLeads.map(lead => [
-      lead.name || '-',
-      lead.email || '-',
-      lead.phone || '-',
-      lead.company || '-',
-      lead.city || '-',
-      lead.zip || lead.pincode || '-',
-      lead.interestedIn || lead['00N4x00000bbbE3'] || '-',
-      lead.message || lead.needs || '-',
-      `${lead.sourcePageName || lead.sourcePageSlug || 'preview'} (/${lead.sourcePageSlug || 'preview'})`,
-      lead.createdAt ? new Date(lead.createdAt).toLocaleString() : '-'
-    ]);
-
     autoTable(doc, {
-      head: tableHeaders,
-      body: tableRows,
+      head: [headers],
+      body: rows,
       startY: 28,
       theme: 'grid',
       headStyles: { fillColor: [237, 28, 36], textColor: [255, 255, 255] },
-      styles: { fontSize: 7, cellPadding: 2 },
-      columnStyles: {
-        7: { cellWidth: 40 }, // Message / Remarks
-      }
+      styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' }
     });
 
     doc.save(`enquiries_${scope}_${new Date().toISOString().slice(0, 10)}.pdf`);
