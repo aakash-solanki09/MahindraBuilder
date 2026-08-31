@@ -30,7 +30,7 @@ services:
       - SALESFORCE_ORG_ID=00D4x000007sh6p
       - SALESFORCE_RECORD_TYPE=012Vt0000023hFO
       - SALESFORCE_DEBUG_EMAIL=amin.noumita@mahindralogistics.com
-      - SALESFORCE_DEBUG=0
+      - SALESFORCE_DEBUG=1
     volumes:
       - uploads-data:/app/public/uploads
     restart: unless-stopped
