@@ -122,8 +122,10 @@ export const createLead = async (req: Request, res: Response) => {
           
           const value = req.body[formFieldName];
           if (value !== undefined && value !== null) {
-            params.append(sfFieldId, String(value));
-            console.log(`[Salesforce-DYNAMIC] Mapped ${formFieldName} → ${sfFieldId} = ${String(value).slice(0, 50)}`);
+            if (!params.has(sfFieldId)) {
+              params.append(sfFieldId, String(value));
+              console.log(`[Salesforce-DYNAMIC] Mapped ${formFieldName} → ${sfFieldId} = ${String(value).slice(0, 50)}`);
+            }
           }
         }
       } else {
