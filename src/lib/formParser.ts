@@ -27,15 +27,20 @@ export function parseHtmlForm(html: string): ParsedFormField[] {
     const attrs = parseAttributes(match[0]);
     const type = (attrs.type || 'text').toLowerCase();
     
-    // Skip submit/button/reset/image/hidden
-    if (['submit', 'button', 'reset', 'image', 'hidden'].includes(type)) {
+    // Skip submit/button/reset/image
+    if (['submit', 'button', 'reset', 'image'].includes(type)) {
       continue;
     }
 
     const name = attrs.name || attrs.id || '';
     if (!name) continue;
 
-    const label = findLabel(cleanHtml, name, attrs);
+    // Skip core Salesforce config fields as they are handled via salesforceConfig
+    if (type === 'hidden' && ['oid', 'returl', 'recordtype', 'debug', 'debugemail'].includes(name.toLowerCase())) {
+      continue;
+    }
+
+    const label = type === 'hidden' ? name : findLabel(cleanHtml, name, attrs);
     fields.push(createField(name, label, type, attrs));
   }
 
@@ -144,13 +149,15 @@ function createField(name: string, label: string, type: string, attrs: Record<st
     fieldType = 'tel';
   } else if (type === 'number') {
     fieldType = 'number';
+  } else if (type === 'hidden') {
+    fieldType = 'hidden';
   }
 
   return {
     name,
     label,
     type: fieldType,
-    placeholder: attrs.placeholder || '',
+    placeholder: type === 'hidden' ? (attrs.value || '') : (attrs.placeholder || ''),
     required: attrs.required !== undefined || attrs['aria-required'] === 'true',
     maxLength: attrs.maxlength ? parseInt(attrs.maxlength) : undefined,
     pattern: attrs.pattern || undefined,

@@ -16,8 +16,9 @@ export const createLead = async (req: Request, res: Response) => {
 
     const fullName = String(req.body.name || `${req.body.first_name || ''} ${req.body.last_name || ''}`).trim();
 
-    // Compute remarks from known fields (No hardcoded SF IDs here)
+    // Compute remarks from known fields or the smartly computed frontend field
     const remarks = String(
+      req.body._computedRemarks ||
       req.body.needs ||
       req.body.remarks ||
       req.body.message ||
@@ -63,8 +64,14 @@ export const createLead = async (req: Request, res: Response) => {
       const recordType = sfConfig.recordType || process.env.SALESFORCE_RECORD_TYPE || req.body.recordType;
       if (recordType) params.append('recordType', recordType);
       
-      const leadSource = process.env.SALESFORCE_LEAD_SOURCE || req.body.lead_source;
-      if (leadSource) params.append('lead_source', leadSource);
+      const leadSource = sfConfig.lead_source || process.env.SALESFORCE_LEAD_SOURCE || req.body.lead_source || 'Campaign';
+      if (leadSource && !params.has('lead_source')) params.append('lead_source', leadSource);
+      
+      const entity = req.body.Entity__c || 'MESPL';
+      if (entity && !params.has('Entity__c')) params.append('Entity__c', entity);
+      
+      const verticalDh = req.body.Vertical_DH__c || 'Not specified';
+      if (verticalDh && !params.has('Vertical_DH__c')) params.append('Vertical_DH__c', verticalDh);
       
       if (process.env.SALESFORCE_DEBUG !== undefined || sfConfig.debug !== undefined || req.body.debug !== undefined) {
         params.append('debug', process.env.SALESFORCE_DEBUG !== undefined ? process.env.SALESFORCE_DEBUG : String(sfConfig.debug ?? req.body.debug ?? 0));
@@ -111,7 +118,6 @@ export const createLead = async (req: Request, res: Response) => {
       if (Object.keys(fieldMap).length > 0) {
         console.log('[Salesforce-DYNAMIC] Using field map:', fieldMap);
         for (const [formFieldName, sfFieldId] of Object.entries(fieldMap)) {
-          // Skip standard fields (already handled above)
           if (STANDARD_SF_FIELDS.includes(formFieldName)) continue;
           
           const value = req.body[formFieldName];
@@ -124,12 +130,13 @@ export const createLead = async (req: Request, res: Response) => {
         console.warn('[Salesforce] No dynamic _fieldMap provided. Only standard fields will be sent.');
       }
 
-      // Dynamic fallback for any additional env vars if they exist
-      const verticalDh = process.env.SALESFORCE_VERTICAL || req.body.Vertical_DH__c;
-      if (verticalDh && !params.has('Vertical_DH__c')) params.append('Vertical_DH__c', verticalDh);
-      
-      const entity = process.env.SALESFORCE_ENTITY || req.body.Entity__c;
-      if (entity && !params.has('Entity__c')) params.append('Entity__c', entity);
+      // Always guarantee critical custom fields are populated with defaults if they weren't mapped dynamically
+      if (!params.has('00N4x00000bbbE3')) {
+        params.append('00N4x00000bbbE3', req.body['00N4x00000bbbE3'] || req.body.interestedIn || req.body.interest || 'Surface Express');
+      }
+      if (!params.has('00N4x00000bbbEM') && remarks) {
+        params.append('00N4x00000bbbEM', remarks);
+      }
 
       console.log('[Salesforce] Forwarding lead to:', sfUrl);
       const sfRes = await fetch(sfUrl, {
@@ -141,7 +148,7 @@ export const createLead = async (req: Request, res: Response) => {
         body: params.toString()
       });
       const sfResText = await sfRes.text();
-      console.log('[Salesforce] Lead forwarded. Status:', sfRes.status, 'Response:', sfResText.slice(0, 500));
+      console.log('[Salesforce] Lead forwarded. Status:', sfRes.status, 'Response:', sfResText.slice(0, 3000));
     } catch (sfEx: any) {
       console.error('[Salesforce] Exception caught during lead preparation:', sfEx);
       // 🔥 Return 400 Error as requested by user if dynamic config fails

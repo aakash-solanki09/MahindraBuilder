@@ -105,6 +105,9 @@ const Hero: React.FC<HeroProps> = ({
     { name: 'zip', label: 'Pin Code *', placeholder: 'Enter pin code...', type: 'text' as const, required: true, maxLength: 20, pattern: '[0-9]*', inputMode: 'numeric' as const, salesforceFieldId: 'zip' },
     { name: '00N4x00000bbbE3', label: 'Interested In *', placeholder: 'Select Option', type: 'select' as const, required: true, options: ['Surface Express'], salesforceFieldId: '00N4x00000bbbE3' },
     { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'text' as const, required: true, maxLength: 255, salesforceFieldId: '00N4x00000bbbEM' },
+    { name: 'Vertical_DH__c', type: 'hidden' as const, placeholder: 'Not specified', salesforceFieldId: 'Vertical_DH__c' },
+    { name: 'lead_source', type: 'hidden' as const, placeholder: 'Campaign', salesforceFieldId: 'lead_source' },
+    { name: 'Entity__c', type: 'hidden' as const, placeholder: 'MESPL', salesforceFieldId: 'Entity__c' }
   ];
 
   // 🔥 DYNAMIC: Use builder-defined fields if explicitly set (even empty array = user cleared), otherwise fallback to defaults
@@ -131,6 +134,14 @@ const Hero: React.FC<HeroProps> = ({
 
     const storedUTM = getStoredUTMParams();
 
+    // Inject hidden field defaults if not in formData
+    const finalFormData = { ...formData };
+    fields.forEach((f: any) => {
+      if (f.type === 'hidden' && !finalFormData[f.name] && f.placeholder) {
+        finalFormData[f.name] = f.placeholder;
+      }
+    });
+
     // Build Salesforce field mapping from dynamic fields
     const salesforceFieldMap: Record<string, string> = {};
     fields.forEach((f: any) => {
@@ -139,14 +150,24 @@ const Hero: React.FC<HeroProps> = ({
       }
     });
 
+    // Smartly extract remarks/message regardless of what the SF ID is
+    const remarksField = fields.find((f: any) => 
+      f.label?.toLowerCase().includes('remark') || 
+      f.label?.toLowerCase().includes('message') ||
+      f.name === 'message' || 
+      f.name === 'remarks'
+    );
+    const computedRemarks = remarksField ? finalFormData[remarksField.name] : '';
+
     // Use page-specific Salesforce config if available
     const sfConfig = (content as any).salesforce || {};
 
     await api.post('/leads', {
-      ...formData,
+      ...finalFormData,
       ...storedUTM,
       _fieldMap: salesforceFieldMap,   // Dynamic field mapping for server
       _salesforce: sfConfig,           // Per-page Salesforce config
+      _computedRemarks: computedRemarks, // Pass computed remarks to backend
       sourcePageName: resolvedName,
       sourcePageSlug: resolvedSlug,
       sourcePath: location.pathname,
@@ -163,6 +184,8 @@ const Hero: React.FC<HeroProps> = ({
     const phone = mobileField ? String(formData[mobileField.name] || '').replace(/\D/g, '') : '';
 
     for (const field of fields) {
+      if (field.type === 'hidden') continue; // Do not validate hidden fields
+
       const val = formData[field.name];
       const isRequired = field.required !== false;
 
@@ -667,7 +690,8 @@ const Form = ({
             key={idx}
             className={cn(
               "space-y-1.5 text-left relative",
-              isFullWidth && "lg:col-span-2"
+              isFullWidth && "lg:col-span-2",
+              field.type === 'hidden' && "hidden"
             )}
           >
             <label

@@ -20,7 +20,10 @@ export const defaultSections: Record<SectionType, any> = {
       { name: 'city', label: 'City *', placeholder: 'Enter city...', type: 'text', required: true, pattern: '^[A-Za-z ]+$', inputMode: 'text', salesforceFieldId: 'city' },
       { name: 'zip', label: 'Pin Code *', placeholder: 'Enter pin code...', type: 'text', required: true, maxLength: 20, pattern: '[0-9]*', inputMode: 'numeric', salesforceFieldId: 'zip' },
       { name: '00N4x00000bbbE3', label: 'Interested In *', placeholder: 'Select Option', type: 'select', required: true, options: ['Surface Express'], salesforceFieldId: '00N4x00000bbbE3' },
-      { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'text', required: true, maxLength: 255, salesforceFieldId: '00N4x00000bbbEM' }
+      { name: '00N4x00000bbbEM', label: 'Remarks *', placeholder: 'Enter remarks...', type: 'text', required: true, maxLength: 255, salesforceFieldId: '00N4x00000bbbEM' },
+      { name: 'Vertical_DH__c', type: 'hidden', placeholder: 'Not specified', salesforceFieldId: 'Vertical_DH__c' },
+      { name: 'lead_source', type: 'hidden', placeholder: 'Campaign', salesforceFieldId: 'lead_source' },
+      { name: 'Entity__c', type: 'hidden', placeholder: 'MESPL', salesforceFieldId: 'Entity__c' }
     ]
   },
   'thank-you': {
